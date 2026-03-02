@@ -81,3 +81,31 @@ export const ticketPurchases = mysqlTable(
 
 export type TicketPurchase = typeof ticketPurchases.$inferSelect;
 export type InsertTicketPurchase = typeof ticketPurchases.$inferInsert;
+
+/**
+ * Favorite events table
+ * Tracks user's favorite events for quick access
+ */
+export const favoriteEvents = mysqlTable(
+  "favorite_events",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("user_id").notNull(),
+    eventId: varchar("event_id", { length: 255 }).notNull(),
+    eventTitle: text("event_title").notNull(),
+    eventCity: varchar("event_city", { length: 255 }).notNull(),
+    eventCategory: varchar("event_category", { length: 255 }).notNull(),
+    eventPrice: decimal("event_price", { precision: 10, scale: 2 }),
+    eventDate: varchar("event_date", { length: 255 }),
+    eventImageUrl: text("event_image_url"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("favorite_user_id_idx").on(table.userId),
+    eventIdIdx: index("favorite_event_id_idx").on(table.eventId),
+    userEventIdx: index("favorite_user_event_idx").on(table.userId, table.eventId),
+  })
+);
+
+export type FavoriteEvent = typeof favoriteEvents.$inferSelect;
+export type InsertFavoriteEvent = typeof favoriteEvents.$inferInsert;

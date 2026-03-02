@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { MapPin, ArrowRight } from "lucide-react";
+import { MapPin, ArrowRight, Heart } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Home() {
@@ -17,12 +17,22 @@ export default function Home() {
             <MapPin className="w-6 h-6 text-blue-600" />
             <span className="font-bold text-lg">Agitaí</span>
           </div>
-          <Link href="/map">
-            <Button className="gap-2">
-              <MapPin className="w-4 h-4" />
-              Mapa Interativo
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {isAuthenticated && (
+              <Link href="/favorites">
+                <Button variant="outline" className="gap-2">
+                  <Heart className="w-4 h-4" />
+                  Favoritos
+                </Button>
+              </Link>
+            )}
+            <Link href="/map">
+              <Button className="gap-2">
+                <MapPin className="w-4 h-4" />
+                Mapa Interativo
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -104,15 +114,13 @@ export default function Home() {
               {/* Feature 3 */}
               <div className="p-8 rounded-2xl border border-border bg-card hover:shadow-lg transition-shadow">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <Heart className="w-6 h-6 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Informações Completas
+                  Salve Favoritos
                 </h3>
                 <p className="text-gray-600">
-                  Veja detalhes de cada evento incluindo data, horário, preço e quantidade de ingressos disponíveis.
+                  Marque seus eventos favoritos e acesse-os facilmente depois. Crie sua lista personalizada de eventos.
                 </p>
               </div>
             </div>

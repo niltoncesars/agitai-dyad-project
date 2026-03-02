@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapView } from "@/components/Map";
 import { BuyTicketModal } from "@/components/BuyTicketModal";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -314,7 +315,7 @@ export default function MapPage() {
                   <span className="text-sm text-gray-700">{selectedEvent.time}</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center justify-between mt-4 gap-4">
                 <div>
                   <span className="text-sm text-gray-600">Ingressos vendidos</span>
                   <p className="text-lg font-bold text-gray-900">
@@ -327,14 +328,27 @@ export default function MapPage() {
                     {selectedEvent.price === 0 ? "Gratuito" : formatCurrency(selectedEvent.price)}
                   </p>
                 </div>
-                <Button
-                  onClick={handleBuyClick}
-                  className="gap-2"
-                  size="lg"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  Comprar Ingresso
-                </Button>
+                <div className="flex gap-2 items-center">
+                  <FavoriteButton
+                    eventId={selectedEvent.id}
+                    eventTitle={selectedEvent.title}
+                    eventCity={selectedEvent.city_name}
+                    eventCategory={selectedEvent.category}
+                    eventPrice={selectedEvent.price.toString()}
+                    eventDate={selectedEvent.date}
+                    eventImageUrl={selectedEvent.image}
+                    size="lg"
+                    showLabel={false}
+                  />
+                  <Button
+                    onClick={handleBuyClick}
+                    className="gap-2"
+                    size="lg"
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    Comprar Ingresso
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

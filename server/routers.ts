@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { createTicketCheckoutSession, getUserTicketPurchases } from "./payments";
+import { addFavorite, removeFavorite, isFavorited, getUserFavorites } from "./favorites";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -57,6 +58,79 @@ export const appRouter = router({
     myPurchases: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("User not authenticated");
       return getUserTicketPurchases(ctx.user.id);
+    }),
+  }),
+
+  favorites: router({
+    /**
+     * Add event to favorites
+     */
+    add: protectedProcedure
+      .input(
+        z.object({
+          eventId: z.string(),
+          eventTitle: z.string(),
+          eventCity: z.string(),
+          eventCategory: z.string(),
+          eventPrice: z.string().optional(),
+          eventDate: z.string().optional(),
+          eventImageUrl: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new Error("User not authenticated");
+
+        await addFavorite(
+          ctx.user.id,
+          input.eventId,
+          input.eventTitle,
+          input.eventCity,
+          input.eventCategory,
+          input.eventPrice,
+          input.eventDate,
+          input.eventImageUrl
+        );
+
+        return { success: true };
+      }),
+
+    /**
+     * Remove event from favorites
+     */
+    remove: protectedProcedure
+      .input(
+        z.object({
+          eventId: z.string(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new Error("User not authenticated");
+
+        await removeFavorite(ctx.user.id, input.eventId);
+
+        return { success: true };
+      }),
+
+    /**
+     * Check if event is favorited
+     */
+    isFavorited: protectedProcedure
+      .input(
+        z.object({
+          eventId: z.string(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user) return false;
+        return isFavorited(ctx.user.id, input.eventId);
+      }),
+
+    /**
+     * Get all user's favorite events
+     */
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("User not authenticated");
+      return getUserFavorites(ctx.user.id);
     }),
   }),
 });
