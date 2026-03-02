@@ -1,11 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapView } from "@/components/Map";
+import { BuyTicketModal } from "@/components/BuyTicketModal";
 import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
+import { toast } from "sonner";
 
 export default function MapPage() {
   const [selectedCity, setSelectedCity] = useState("all");
@@ -13,8 +17,10 @@ export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [mapLoading, setMapLoading] = useState(true);
+  const [showBuyModal, setShowBuyModal] = useState(false);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const { user, isAuthenticated } = useAuth();
 
   const filteredEvents = events.filter((event) => {
     if (selectedCity !== "all" && event.city_id !== selectedCity) return false;
@@ -106,6 +112,15 @@ export default function MapPage() {
       mapRef.current.setCenter({ lat: -14.2350, lng: -51.9253 });
       mapRef.current.setZoom(4);
     }
+  };
+
+  const handleBuyClick = () => {
+    if (!isAuthenticated) {
+      toast.info("Faça login para comprar ingressos");
+      window.location.href = getLoginUrl();
+      return;
+    }
+    setShowBuyModal(true);
   };
 
   return (
@@ -312,10 +327,27 @@ export default function MapPage() {
                     {selectedEvent.price === 0 ? "Gratuito" : formatCurrency(selectedEvent.price)}
                   </p>
                 </div>
+                <Button
+                  onClick={handleBuyClick}
+                  className="gap-2"
+                  size="lg"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  Comprar Ingresso
+                </Button>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Buy Ticket Modal */}
+      {selectedEvent && (
+        <BuyTicketModal
+          isOpen={showBuyModal}
+          onClose={() => setShowBuyModal(false)}
+          event={selectedEvent}
+        />
       )}
     </div>
   );
