@@ -33,3 +33,9 @@
 - [x] Implementar sistema de detecção de eventos próximos
 - [x] Implementar sistema de detecção de mudanças de preço
 - [x] Testar funcionalidade de notificações (18 testes passando)
+
+## Compartilhamento em Redes Sociais
+- [x] Criar componente ShareButtons com suporte a múltiplas redes sociais
+- [x] Integrar botões de compartilhamento na página do mapa
+- [x] Integrar botões de compartilhamento na página de favoritos
+- [x] Testar funcionalidade de compartilhamento

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MapView } from "@/components/Map";
 import { BuyTicketModal } from "@/components/BuyTicketModal";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { ShareButtons } from "@/components/ShareButtons";
 import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -339,6 +340,12 @@ export default function MapPage() {
                     eventImageUrl={selectedEvent.image}
                     size="lg"
                     showLabel={false}
+                  />
+                  <ShareButtons
+                    eventTitle={selectedEvent.title}
+                    eventCity={selectedEvent.city_name}
+                    eventDate={selectedEvent.date}
+                    eventPrice={selectedEvent.price.toString()}
                   />
                   <Button
                     onClick={handleBuyClick}

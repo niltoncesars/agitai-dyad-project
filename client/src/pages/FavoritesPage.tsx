@@ -2,6 +2,7 @@ import { Heart, MapPin, Calendar, Tag, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import { ShareButtons } from "@/components/ShareButtons";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -165,6 +166,13 @@ export default function FavoritesPage() {
                         Ver no Mapa
                       </Button>
                     </Link>
+                    <ShareButtons
+                      eventTitle={event.eventTitle}
+                      eventCity={event.eventCity}
+                      eventDate={event.eventDate}
+                      eventPrice={event.eventPrice}
+                      className="w-full"
+                    />
                     <Button
                       variant="ghost"
                       size="sm"
