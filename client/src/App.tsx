@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import MapPage from "./pages/MapPage";
 import FavoritesPage from "./pages/FavoritesPage";
+import NotificationSettingsPage from "./pages/NotificationSettingsPage";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -15,6 +16,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/map"} component={MapPage} />
       <Route path={"/favorites"} component={FavoritesPage} />
+      <Route path={"/notification-settings"} component={NotificationSettingsPage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

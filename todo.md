@@ -25,3 +25,11 @@
 - [ ] Integração com redes sociais para compartilhamento
 - [ ] Filtro por data e preço
 - [ ] Mapa de calor de eventos populares
+
+## Sistema de Notificações
+- [x] Criar tabelas de notificações e preferências no banco de dados
+- [x] Implementar procedimentos tRPC para gerenciar notificações
+- [x] Criar componentes de UI para notificações (toast, bell icon, centro de notificações)
+- [x] Implementar sistema de detecção de eventos próximos
+- [x] Implementar sistema de detecção de mudanças de preço
+- [x] Testar funcionalidade de notificações (18 testes passando)

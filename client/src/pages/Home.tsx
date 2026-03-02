@@ -1,12 +1,16 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { MapPin, ArrowRight, Heart } from "lucide-react";
+import { MapPin, ArrowRight, Heart, Bell } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
+import { NotificationBell } from "@/components/NotificationBell";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 export default function Home() {
   // The userAuth hooks provides authentication state
   // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
   let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -17,14 +21,22 @@ export default function Home() {
             <MapPin className="w-6 h-6 text-blue-600" />
             <span className="font-bold text-lg">Agitaí</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             {isAuthenticated && (
-              <Link href="/favorites">
-                <Button variant="outline" className="gap-2">
-                  <Heart className="w-4 h-4" />
-                  Favoritos
-                </Button>
-              </Link>
+              <>
+                <NotificationBell onOpenCenter={() => setNotificationCenterOpen(true)} />
+                <Link href="/notification-settings">
+                  <Button variant="outline" size="icon" className="gap-2">
+                    <Bell className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Link href="/favorites">
+                  <Button variant="outline" className="gap-2">
+                    <Heart className="w-4 h-4" />
+                    Favoritos
+                  </Button>
+                </Link>
+              </>
             )}
             <Link href="/map">
               <Button className="gap-2">
@@ -161,6 +173,12 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Notification Center */}
+      <NotificationCenter
+        isOpen={notificationCenterOpen}
+        onClose={() => setNotificationCenterOpen(false)}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, index } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, index } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -109,3 +109,83 @@ export const favoriteEvents = mysqlTable(
 
 export type FavoriteEvent = typeof favoriteEvents.$inferSelect;
 export type InsertFavoriteEvent = typeof favoriteEvents.$inferInsert;
+
+/**
+ * Notification preferences table
+ * Stores user preferences for different types of notifications
+ */
+export const notificationPreferences = mysqlTable(
+  "notification_preferences",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("user_id").notNull().unique(),
+    enableUpcomingEvents: boolean("enable_upcoming_events").default(true).notNull(),
+    enablePriceChanges: boolean("enable_price_changes").default(true).notNull(),
+    enableFavoriteUpdates: boolean("enable_favorite_updates").default(true).notNull(),
+    upcomingEventsRadius: int("upcoming_events_radius").default(50).notNull(), // in km
+    upcomingEventsDaysBefore: int("upcoming_events_days_before").default(7).notNull(), // days before event
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("notif_pref_user_id_idx").on(table.userId),
+  })
+);
+
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreference = typeof notificationPreferences.$inferInsert;
+
+/**
+ * User notifications table
+ * Stores all notifications sent to users
+ */
+export const userNotifications = mysqlTable(
+  "user_notifications",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("user_id").notNull(),
+    eventId: varchar("event_id", { length: 255 }),
+    type: mysqlEnum("type", ["upcoming_event", "price_change", "favorite_update", "purchase_confirmation"]).notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    message: text("message").notNull(),
+    actionUrl: text("action_url"),
+    isRead: boolean("is_read").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    readAt: timestamp("read_at"),
+  },
+  (table) => ({
+    userIdIdx: index("notif_user_id_idx").on(table.userId),
+    eventIdIdx: index("notif_event_id_idx").on(table.eventId),
+    typeIdx: index("notif_type_idx").on(table.type),
+    isReadIdx: index("notif_is_read_idx").on(table.isRead),
+    userReadIdx: index("notif_user_read_idx").on(table.userId, table.isRead),
+  })
+);
+
+export type UserNotification = typeof userNotifications.$inferSelect;
+export type InsertUserNotification = typeof userNotifications.$inferInsert;
+
+/**
+ * Price change tracking table
+ * Tracks price changes for events to detect when to notify users
+ */
+export const eventPriceHistory = mysqlTable(
+  "event_price_history",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    eventId: varchar("event_id", { length: 255 }).notNull(),
+    eventTitle: text("event_title").notNull(),
+    previousPrice: decimal("previous_price", { precision: 10, scale: 2 }).notNull(),
+    currentPrice: decimal("current_price", { precision: 10, scale: 2 }).notNull(),
+    priceChangePercent: decimal("price_change_percent", { precision: 5, scale: 2 }).notNull(),
+    reason: varchar("reason", { length: 255 }), // e.g., "batch_change", "promotion", "adjustment"
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    eventIdIdx: index("price_history_event_id_idx").on(table.eventId),
+    createdAtIdx: index("price_history_created_at_idx").on(table.createdAt),
+  })
+);
+
+export type EventPriceHistory = typeof eventPriceHistory.$inferSelect;
+export type InsertEventPriceHistory = typeof eventPriceHistory.$inferInsert;

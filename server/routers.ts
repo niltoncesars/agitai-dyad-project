@@ -5,6 +5,16 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { createTicketCheckoutSession, getUserTicketPurchases } from "./payments";
 import { addFavorite, removeFavorite, isFavorited, getUserFavorites } from "./favorites";
+import {
+  getOrCreateNotificationPreferences,
+  updateNotificationPreferences,
+  getUnreadNotifications,
+  getUserNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  getUnreadNotificationCount,
+  createNotification,
+} from "./notifications";
 
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -131,6 +141,90 @@ export const appRouter = router({
     list: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) throw new Error("User not authenticated");
       return getUserFavorites(ctx.user.id);
+    }),
+  }),
+
+  notifications: router({
+    /**
+     * Get notification preferences for current user
+     */
+    getPreferences: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("User not authenticated");
+      return getOrCreateNotificationPreferences(ctx.user.id);
+    }),
+
+    /**
+     * Update notification preferences
+     */
+    updatePreferences: protectedProcedure
+      .input(
+        z.object({
+          enableUpcomingEvents: z.boolean().optional(),
+          enablePriceChanges: z.boolean().optional(),
+          enableFavoriteUpdates: z.boolean().optional(),
+          upcomingEventsRadius: z.number().optional(),
+          upcomingEventsDaysBefore: z.number().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new Error("User not authenticated");
+        await updateNotificationPreferences(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    /**
+     * Get unread notifications
+     */
+    getUnread: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("User not authenticated");
+      return getUnreadNotifications(ctx.user.id);
+    }),
+
+    /**
+     * Get all notifications (paginated)
+     */
+    getAll: protectedProcedure
+      .input(
+        z.object({
+          limit: z.number().default(20),
+          offset: z.number().default(0),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user) throw new Error("User not authenticated");
+        return getUserNotifications(ctx.user.id, input.limit, input.offset);
+      }),
+
+    /**
+     * Mark notification as read
+     */
+    markAsRead: protectedProcedure
+      .input(
+        z.object({
+          notificationId: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await markNotificationAsRead(input.notificationId);
+        return { success: true };
+      }),
+
+    /**
+     * Mark all notifications as read
+     */
+    markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("User not authenticated");
+      await markAllNotificationsAsRead(ctx.user.id);
+      return { success: true };
+    }),
+
+    /**
+     * Get unread notification count
+     */
+    getUnreadCount: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new Error("User not authenticated");
+      const count = await getUnreadNotificationCount(ctx.user.id);
+      return { count };
     }),
   }),
 });
