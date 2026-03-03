@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart } from "lucide-react";
+import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,36 @@ import { BuyTicketModal } from "@/components/BuyTicketModal";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ShareButtons } from "@/components/ShareButtons";
 import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 import L from "leaflet";
+
+const SETTINGS_KEY = "agitai_notification_settings";
+
+interface NotificationSettings {
+  enableUpcomingEvents: boolean;
+  enablePriceChanges: boolean;
+  enableFavoriteUpdates: boolean;
+  upcomingEventsRadius: number;
+  upcomingEventsDaysBefore: number;
+  userLatitude: number | null;
+  userLongitude: number | null;
+  locationName: string;
+}
+
+// Função para calcular distância entre dois pontos (Haversine formula)
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Raio da Terra em km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export default function MapPage() {
   const [selectedCity, setSelectedCity] = useState("all");
@@ -22,15 +47,43 @@ export default function MapPage() {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [mapLoading, setMapLoading] = useState(true);
   const [showBuyModal, setShowBuyModal] = useState(false);
+  const [showRadius, setShowRadius] = useState(true);
+  
   const mapRef = useRef<any>(null);
   const markersRef = useRef<L.Marker[]>([]);
-  const { user, isAuthenticated } = useAuth();
+  const radiusCircleRef = useRef<L.Circle | null>(null);
+  const userMarkerRef = useRef<L.Marker | null>(null);
+  
+  const { user, isAuthenticated } = useAuthContext();
+  const [settings, setSettings] = useState<NotificationSettings | null>(null);
+
+  // Carregar configurações do localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      if (saved) {
+        setSettings(JSON.parse(saved));
+      }
+    } catch {}
+  }, []);
 
   const filteredEvents = events.filter((event) => {
     if (selectedCity !== "all" && event.city_id !== selectedCity) return false;
     if (selectedCategory !== "all" && event.category !== selectedCategory) return false;
     if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
+  });
+
+  // Identificar eventos dentro do raio
+  const eventsInRange = filteredEvents.filter(event => {
+    if (!settings?.userLatitude || !settings?.userLongitude || !settings?.enableUpcomingEvents) return false;
+    const distance = calculateDistance(
+      settings.userLatitude,
+      settings.userLongitude,
+      event.latitude,
+      event.longitude
+    );
+    return distance <= settings.upcomingEventsRadius;
   });
 
   const categories = Array.from(new Set(events.map((e) => e.category)));
@@ -42,8 +95,52 @@ export default function MapPage() {
     mapRef.current = mapAdapter;
     setMapLoading(false);
     
+    const map = mapAdapter.leafletInstance;
+    
+    // Adicionar raio visual se houver localização
+    updateRadiusOnMap(map);
+    
     // Adicionar marcadores iniciais
-    addMarkersToMap(mapAdapter.leafletInstance, filteredEvents);
+    addMarkersToMap(map, filteredEvents);
+  };
+
+  // Função para atualizar o raio no mapa
+  const updateRadiusOnMap = (map: L.Map) => {
+    // Limpar anteriores
+    if (radiusCircleRef.current) radiusCircleRef.current.remove();
+    if (userMarkerRef.current) userMarkerRef.current.remove();
+
+    if (settings?.userLatitude && settings?.userLongitude && settings.enableUpcomingEvents && showRadius) {
+      const center: [number, number] = [settings.userLatitude, settings.userLongitude];
+      
+      // Círculo do raio
+      radiusCircleRef.current = L.circle(center, {
+        radius: settings.upcomingEventsRadius * 1000, // converter para metros
+        color: "#3b82f6",
+        fillColor: "#3b82f6",
+        fillOpacity: 0.1,
+        weight: 1,
+        dashArray: "5, 5"
+      }).addTo(map);
+
+      // Marcador do usuário
+      const userIcon = L.divIcon({
+        className: "custom-user-icon",
+        html: `<div class="w-4 h-4 bg-blue-600 border-2 border-white rounded-full shadow-lg animate-pulse"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
+
+      userMarkerRef.current = L.marker(center, { icon: userIcon })
+        .addTo(map)
+        .bindPopup("Sua localização configurada");
+
+      // Ajustar visualização para mostrar o raio se solicitado
+      if (settings.userLatitude && settings.userLongitude) {
+        // Opcional: focar no raio ao carregar
+        // map.fitBounds(radiusCircleRef.current.getBounds());
+      }
+    }
   };
 
   // Função para adicionar marcadores ao mapa
@@ -58,7 +155,27 @@ export default function MapPage() {
     eventsToAdd.forEach((event) => {
       if (event.latitude && event.longitude) {
         try {
+          // Verificar se está no raio para destacar
+          const isInRange = settings?.userLatitude && settings?.userLongitude && settings.enableUpcomingEvents
+            ? calculateDistance(settings.userLatitude, settings.userLongitude, event.latitude, event.longitude) <= settings.upcomingEventsRadius
+            : false;
+
+          const markerColor = isInRange ? "#ef4444" : "#3b82f6";
+          
+          const customIcon = L.divIcon({
+            className: "custom-event-icon",
+            html: `<div class="relative">
+              <div class="w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white" style="background-color: ${markerColor}">
+                <div class="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+              ${isInRange ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-white rounded-full"></div>' : ''}
+            </div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          });
+
           const marker = L.marker([event.latitude, event.longitude], {
+            icon: customIcon,
             title: event.title,
           }).addTo(map);
 
@@ -75,12 +192,14 @@ export default function MapPage() {
     });
   };
 
-  // Atualizar marcadores quando filtros mudam
+  // Atualizar marcadores quando filtros ou configurações mudam
   useEffect(() => {
     if (mapRef.current) {
-      addMarkersToMap(mapRef.current.leafletInstance, filteredEvents);
+      const map = mapRef.current.leafletInstance;
+      updateRadiusOnMap(map);
+      addMarkersToMap(map, filteredEvents);
     }
-  }, [selectedCity, selectedCategory, searchQuery]);
+  }, [selectedCity, selectedCategory, searchQuery, settings, showRadius]);
 
   // Controles do mapa
   const handleZoomIn = () => {
@@ -104,10 +223,22 @@ export default function MapPage() {
     }
   };
 
+  const handleFocusUser = () => {
+    if (mapRef.current && settings?.userLatitude && settings?.userLongitude) {
+      mapRef.current.setCenter({ lat: settings.userLatitude, lng: settings.userLongitude });
+      mapRef.current.setZoom(10);
+      if (radiusCircleRef.current) {
+        mapRef.current.leafletInstance.fitBounds(radiusCircleRef.current.getBounds());
+      }
+    } else {
+      toast.info("Configure sua localização nas configurações de notificação.");
+    }
+  };
+
   const handleBuyClick = () => {
     if (!isAuthenticated) {
       toast.info("Faça login para comprar ingressos");
-      window.location.href = getLoginUrl();
+      window.location.href = "/login";
       return;
     }
     setShowBuyModal(true);
@@ -117,15 +248,27 @@ export default function MapPage() {
     <DashboardLayout>
       <div className="p-4 lg:p-6 space-y-6 max-w-[1600px] mx-auto">
         {/* Header */}
-        <div className="animate-fade-in">
-          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
-            <span className="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-              Mapa Interativo de Eventos
-            </span>
-          </h1>
-          <p className="text-muted-foreground mt-2 text-lg">
-            {totalEvents} eventos • {formatCurrency(totalRevenue)} em receita
-          </p>
+        <div className="animate-fade-in flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
+              <span className="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                Mapa Interativo de Eventos
+              </span>
+            </h1>
+            <p className="text-muted-foreground mt-2 text-lg">
+              {totalEvents} eventos • {formatCurrency(totalRevenue)} em receita
+            </p>
+          </div>
+          
+          {settings?.userLatitude && (
+            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+              <MapPin className="w-4 h-4 text-blue-600" />
+              <div className="text-xs">
+                <p className="font-semibold text-blue-900">Raio de Notificação: {settings.upcomingEventsRadius} km</p>
+                <p className="text-blue-700">{eventsInRange.length} eventos encontrados na sua região</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
@@ -181,9 +324,20 @@ export default function MapPage() {
               </div>
               <div className="flex gap-1">
                 <Button 
+                  variant={showRadius ? "secondary" : "ghost"} 
+                  size="sm" 
+                  className="gap-2 px-3 h-9"
+                  onClick={() => setShowRadius(!showRadius)}
+                  title="Alternar visualização do raio"
+                >
+                  <Locate className={`w-4 h-4 ${showRadius ? "text-blue-600" : ""}`} />
+                  <span className="text-xs hidden sm:inline">Ver Raio</span>
+                </Button>
+                <div className="w-px h-6 bg-border mx-1 self-center" />
+                <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="rounded-lg hover:bg-muted"
+                  className="h-9 w-9 rounded-lg hover:bg-muted"
                   onClick={handleZoomIn}
                   title="Ampliar"
                 >
@@ -192,7 +346,7 @@ export default function MapPage() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="rounded-lg hover:bg-muted"
+                  className="h-9 w-9 rounded-lg hover:bg-muted"
                   onClick={handleZoomOut}
                   title="Reduzir"
                 >
@@ -201,7 +355,7 @@ export default function MapPage() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="rounded-lg hover:bg-muted"
+                  className="h-9 w-9 rounded-lg hover:bg-muted"
                   onClick={handleResetMap}
                   title="Restaurar visualização"
                 >
@@ -224,54 +378,86 @@ export default function MapPage() {
                 onMapReady={handleMapReady}
                 className="w-full h-full"
               />
+              
+              {/* Botão flutuante para focar no usuário */}
+              {settings?.userLatitude && (
+                <button
+                  onClick={handleFocusUser}
+                  className="absolute bottom-6 right-6 z-[400] bg-white text-blue-600 p-3 rounded-full shadow-xl border border-blue-100 hover:bg-blue-50 transition-all group"
+                  title="Focar na minha localização"
+                >
+                  <Locate className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                </button>
+              )}
             </div>
           </div>
 
           {/* Event List */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm flex flex-col">
-            <div className="p-4 border-b border-border">
+            <div className="p-4 border-b border-border flex items-center justify-between">
               <h3 className="font-semibold text-lg flex items-center gap-2">
                 <Layers className="w-5 h-5 text-blue-600" />
                 Eventos ({filteredEvents.length})
               </h3>
+              {eventsInRange.length > 0 && (
+                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none px-2 py-0.5">
+                  {eventsInRange.length} próximos
+                </Badge>
+              )}
             </div>
             <div className="flex-1 overflow-y-auto max-h-[500px]">
               {filteredEvents.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
+                <div className="p-8 text-center text-muted-foreground">
+                  <Info className="w-8 h-8 mx-auto mb-3 opacity-20" />
                   <p>Nenhum evento encontrado</p>
                 </div>
               ) : (
-                filteredEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className={`p-4 border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer ${
-                      selectedEvent?.id === event.id ? "bg-blue-50 border-l-4 border-l-blue-600" : ""
-                    }`}
-                    onClick={() => setSelectedEvent(event)}
-                  >
-                    <div className="flex gap-3">
-                      <img
-                        src={event.image}
-                        alt={event.title}
-                        className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-medium text-sm truncate">{event.title}</h4>
-                          <FavoriteButton eventId={event.id} size="sm" className="h-6 w-6 bg-transparent shadow-none p-0" />
+                filteredEvents.map((event) => {
+                  const isInRange = settings?.userLatitude && settings?.userLongitude && settings.enableUpcomingEvents
+                    ? calculateDistance(settings.userLatitude, settings.userLongitude, event.latitude, event.longitude) <= settings.upcomingEventsRadius
+                    : false;
+
+                  return (
+                    <div
+                      key={event.id}
+                      className={`p-4 border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer relative ${
+                        selectedEvent?.id === event.id ? "bg-blue-50 border-l-4 border-l-blue-600" : ""
+                      }`}
+                      onClick={() => setSelectedEvent(event)}
+                    >
+                      <div className="flex gap-3">
+                        <div className="relative">
+                          <img
+                            src={event.image}
+                            alt={event.title}
+                            className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                          />
+                          {isInRange && (
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-white rounded-full" title="Próximo a você"></div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="rounded-full text-xs">
-                            {event.category}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {event.city_name}
-                          </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className={`font-medium text-sm truncate ${isInRange ? "text-blue-900" : ""}`}>{event.title}</h4>
+                            <FavoriteButton eventId={event.id} size="sm" className="h-6 w-6 bg-transparent shadow-none p-0" />
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className={`rounded-full text-[10px] px-1.5 h-4 ${isInRange ? "bg-blue-200 text-blue-800" : ""}`}>
+                              {event.category}
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <MapPin className="w-2 h-2" />
+                              {event.city_name}
+                            </span>
+                            {isInRange && (
+                              <span className="text-[10px] font-bold text-red-500 ml-auto">Próximo</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -297,6 +483,9 @@ export default function MapPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <Badge className="bg-blue-600 hover:bg-blue-700">{selectedEvent.category}</Badge>
                       <span className="text-sm text-muted-foreground">{selectedEvent.city_name}</span>
+                      {settings?.userLatitude && calculateDistance(settings.userLatitude, settings.userLongitude!, selectedEvent.latitude, selectedEvent.longitude) <= settings.upcomingEventsRadius && (
+                        <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">Próximo a você</Badge>
+                      )}
                     </div>
                     <h2 className="text-2xl font-bold">{selectedEvent.title}</h2>
                     <p className="text-muted-foreground mt-2 line-clamp-2">{selectedEvent.description}</p>
