@@ -1,11 +1,5 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -15,10 +9,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard,
   Map,
@@ -27,13 +19,13 @@ import {
   Ticket,
   BarChart3,
   Server,
-  LogOut,
   Globe,
   X,
   Heart,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+import Header from "@/components/Header";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -100,8 +92,6 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (isCollapsed) {
@@ -146,7 +136,7 @@ function DashboardLayoutContent({
           className="border-r-0 bg-[#1a1d2e] dark:bg-[#1a1d2e]"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-16 justify-center bg-[#1a1d2e] border-b border-white/10">
+          <SidebarHeader className="h-14 justify-center bg-[#1a1d2e] border-b border-white/10">
             <div className="flex items-center gap-3 px-3 transition-all w-full">
               {/* Logo */}
               <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shrink-0">
@@ -206,14 +196,19 @@ function DashboardLayoutContent({
           <SidebarFooter className="p-3 bg-[#1a1d2e] border-t border-white/10">
             <div className="flex items-center gap-3 rounded-lg px-2 py-2">
               <Avatar className="h-8 w-8 border border-white/20 shrink-0">
-                <AvatarFallback className="text-xs font-medium bg-blue-600 text-white">
-                  U
+                <AvatarFallback
+                  className="text-xs font-bold text-white"
+                  style={{
+                    background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+                  }}
+                >
+                  SA
                 </AvatarFallback>
               </Avatar>
               {!isCollapsed && (
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate leading-none text-white">
-                    Usuário
+                    Super Admin
                   </p>
                   <p className="text-xs text-white/50 truncate mt-1">
                     Enterprise Plan
@@ -234,18 +229,8 @@ function DashboardLayoutContent({
       </div>
 
       <SidebarInset>
-        {isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-background/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
-              <div className="flex items-center gap-2">
-                <span className="tracking-tight text-foreground">
-                  {activeMenuItem?.label ?? "Menu"}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Header fixo no topo */}
+        <Header />
         <main className="flex-1">{children}</main>
       </SidebarInset>
     </>
