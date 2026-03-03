@@ -1,268 +1,461 @@
-import { Bell, ArrowLeft, MapPin, TrendingUp, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useAuthContext } from "@/contexts/AuthContext";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
-import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { toast } from "sonner";
-import { useEffect, useState } from "react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import {
+  Bell,
+  MapPin,
+  TrendingUp,
+  Heart,
+  Save,
+  ArrowLeft,
+  Locate,
+  Info,
+  CheckCircle2,
+} from "lucide-react";
+import { toast } from "sonner";
+
+const SETTINGS_KEY = "agitai_notification_settings";
+
+interface NotificationSettings {
+  enableUpcomingEvents: boolean;
+  enablePriceChanges: boolean;
+  enableFavoriteUpdates: boolean;
+  upcomingEventsRadius: number;
+  upcomingEventsDaysBefore: number;
+  userLatitude: number | null;
+  userLongitude: number | null;
+  locationName: string;
+}
+
+const defaultSettings: NotificationSettings = {
+  enableUpcomingEvents: true,
+  enablePriceChanges: true,
+  enableFavoriteUpdates: true,
+  upcomingEventsRadius: 50,
+  upcomingEventsDaysBefore: 7,
+  userLatitude: null,
+  userLongitude: null,
+  locationName: "",
+};
+
+function loadSettings(): NotificationSettings {
+  try {
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    if (saved) return { ...defaultSettings, ...JSON.parse(saved) };
+  } catch {}
+  return defaultSettings;
+}
+
+function saveSettings(settings: NotificationSettings) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+// Raios pré-definidos para referência visual
+const radiusPresets = [
+  { value: 10, label: "10 km", desc: "Bairro" },
+  { value: 25, label: "25 km", desc: "Cidade" },
+  { value: 50, label: "50 km", desc: "Região" },
+  { value: 100, label: "100 km", desc: "Metropolitana" },
+  { value: 200, label: "200 km", desc: "Estado" },
+];
 
 export default function NotificationSettingsPage() {
-  const { user, isAuthenticated } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, isAuthenticated } = useAuthContext();
+  const [, setLocation] = useLocation();
+  const [settings, setSettings] = useState<NotificationSettings>(loadSettings);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  // Get preferences
-  const { data: preferences, isLoading: isLoadingPrefs } = trpc.notifications.getPreferences.useQuery(
-    undefined,
-    { enabled: !!user }
-  );
-
-  // Update preferences mutation
-  const updateMutation = trpc.notifications.updatePreferences.useMutation({
-    onSuccess: () => {
-      toast.success("Preferências atualizadas com sucesso!");
-    },
-    onError: (error) => {
-      toast.error("Erro ao atualizar preferências");
-      console.error(error);
-    },
-  });
-
-  const [formData, setFormData] = useState({
-    enableUpcomingEvents: true,
-    enablePriceChanges: true,
-    enableFavoriteUpdates: true,
-    upcomingEventsRadius: 50,
-    upcomingEventsDaysBefore: 7,
-  });
-
-  useEffect(() => {
-    if (preferences) {
-      setFormData({
-        enableUpcomingEvents: preferences.enableUpcomingEvents,
-        enablePriceChanges: preferences.enablePriceChanges,
-        enableFavoriteUpdates: preferences.enableFavoriteUpdates,
-        upcomingEventsRadius: preferences.upcomingEventsRadius,
-        upcomingEventsDaysBefore: preferences.upcomingEventsDaysBefore,
-      });
-    }
-  }, [preferences]);
-
+  // Redirecionar para login se não autenticado
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <Bell className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Faça login para gerenciar notificações</h1>
-          <p className="text-muted-foreground mb-6">
-            Configure suas preferências de notificações para receber alertas personalizados
-          </p>
-          <Link href="/">
-            <Button size="lg">Voltar para Home</Button>
-          </Link>
+      <DashboardLayout>
+        <div className="min-h-[80vh] flex items-center justify-center p-6">
+          <div className="text-center max-w-md">
+            <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Bell className="w-10 h-10 text-blue-600" />
+            </div>
+            <h1 className="text-2xl font-bold mb-3">
+              Faça login para configurar notificações
+            </h1>
+            <p className="text-muted-foreground mb-6">
+              Para personalizar o raio de distância e receber alertas de eventos
+              próximos, você precisa estar logado.
+            </p>
+            <Button
+              size="lg"
+              className="gap-2"
+              onClick={() => setLocation("/login")}
+            >
+              Fazer Login
+            </Button>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handleSave = () => {
+    setIsSaving(true);
+    setTimeout(() => {
+      saveSettings(settings);
+      setIsSaving(false);
+      setSaved(true);
+      toast.success("Configurações salvas com sucesso!");
+      setTimeout(() => setSaved(false), 3000);
+    }, 500);
+  };
 
-    try {
-      await updateMutation.mutateAsync(formData);
-    } finally {
-      setIsLoading(false);
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocalização não suportada pelo navegador.");
+      return;
     }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        // Tentar obter nome da localização via API reversa
+        let locationName = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-BR`
+          );
+          const data = await res.json();
+          if (data.address) {
+            const city = data.address.city || data.address.town || data.address.village || "";
+            const state = data.address.state || "";
+            locationName = [city, state].filter(Boolean).join(", ");
+          }
+        } catch {}
+
+        setSettings((prev) => ({
+          ...prev,
+          userLatitude: lat,
+          userLongitude: lng,
+          locationName,
+        }));
+        setIsLocating(false);
+        toast.success(`Localização detectada: ${locationName}`);
+      },
+      (error) => {
+        setIsLocating(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error("Permissão de localização negada. Habilite nas configurações do navegador.");
+        } else {
+          toast.error("Não foi possível obter sua localização.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-      <div className="max-w-2xl mx-auto p-4 lg:p-8">
+    <DashboardLayout>
+      <div className="max-w-3xl mx-auto p-6 lg:p-8 space-y-8">
         {/* Header */}
-        <div className="mb-8">
-          <Link href="/">
-            <Button variant="ghost" className="gap-2 mb-4">
-              <ArrowLeft className="w-4 h-4" />
-              Voltar
-            </Button>
-          </Link>
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 mb-4 -ml-2"
+            onClick={() => setLocation("/dashboard")}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Button>
           <div className="flex items-center gap-3 mb-2">
-            <Bell className="w-8 h-8 text-blue-600" />
-            <h1 className="text-4xl font-bold">Preferências de Notificações</h1>
+            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+              <Bell className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Configurações de Notificação</h1>
+              <p className="text-sm text-muted-foreground">
+                Logado como <span className="font-medium">{user?.name}</span>
+              </p>
+            </div>
           </div>
-          <p className="text-muted-foreground text-lg">
-            Customize como você deseja receber notificações sobre eventos e mudanças de preço
-          </p>
         </div>
 
-        {/* Settings Form */}
-        {isLoadingPrefs ? (
-          <div className="text-center py-12">
-            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-muted-foreground">Carregando preferências...</p>
+        {/* Seção: Localização do Usuário */}
+        <div className="bg-card rounded-2xl border border-border p-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center shrink-0">
+              <Locate className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold mb-1">Sua Localização</h2>
+              <p className="text-sm text-muted-foreground">
+                Defina sua localização para receber notificações de eventos no raio configurado.
+              </p>
+            </div>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Upcoming Events Section */}
-            <div className="bg-card rounded-2xl border border-border p-6">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-6 h-6 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-semibold mb-1">Eventos Próximos</h2>
-                  <p className="text-muted-foreground">
-                    Receba alertas quando houver eventos ocorrendo perto de você
-                  </p>
-                </div>
-              </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <Label htmlFor="enableUpcomingEvents" className="cursor-pointer">
-                    Ativar notificações de eventos próximos
-                  </Label>
-                  <Switch
-                    id="enableUpcomingEvents"
-                    checked={formData.enableUpcomingEvents}
-                    onCheckedChange={(checked) =>
-                      setFormData({ ...formData, enableUpcomingEvents: checked })
+          <div className="space-y-4">
+            <Button
+              variant="outline"
+              className="gap-2 w-full sm:w-auto"
+              onClick={handleGetLocation}
+              disabled={isLocating}
+            >
+              {isLocating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
+                  Detectando localização...
+                </>
+              ) : (
+                <>
+                  <MapPin className="w-4 h-4" />
+                  Detectar minha localização
+                </>
+              )}
+            </Button>
+
+            {settings.locationName && (
+              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>
+                  Localização atual: <strong>{settings.locationName}</strong>
+                </span>
+              </div>
+            )}
+
+            {!settings.locationName && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+                <Info className="h-4 w-4 shrink-0" />
+                <span>
+                  Nenhuma localização definida. Clique no botão acima para detectar automaticamente.
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Seção: Eventos Próximos com Raio */}
+        <div className="bg-card rounded-2xl border border-border p-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+              <MapPin className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold mb-1">Eventos Próximos</h2>
+              <p className="text-sm text-muted-foreground">
+                Receba alertas quando houver eventos ocorrendo dentro do raio configurado.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Toggle */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <Label htmlFor="enableUpcoming" className="cursor-pointer text-sm font-medium">
+                Ativar notificações de eventos próximos
+              </Label>
+              <Switch
+                id="enableUpcoming"
+                checked={settings.enableUpcomingEvents}
+                onCheckedChange={(checked) =>
+                  setSettings((prev) => ({ ...prev, enableUpcomingEvents: checked }))
+                }
+              />
+            </div>
+
+            {settings.enableUpcomingEvents && (
+              <>
+                {/* Raio de distância */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Raio de distância</Label>
+                    <span className="text-2xl font-bold text-blue-600">
+                      {settings.upcomingEventsRadius} km
+                    </span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min="5"
+                    max="300"
+                    step="5"
+                    value={settings.upcomingEventsRadius}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        upcomingEventsRadius: parseInt(e.target.value),
+                      }))
                     }
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   />
-                </div>
 
-                {formData.enableUpcomingEvents && (
-                  <>
-                    <div>
-                      <Label htmlFor="radius" className="text-sm">
-                        Raio de busca: {formData.upcomingEventsRadius} km
-                      </Label>
-                      <Input
-                        id="radius"
-                        type="range"
-                        min="10"
-                        max="200"
-                        step="10"
-                        value={formData.upcomingEventsRadius}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            upcomingEventsRadius: parseInt(e.target.value),
-                          })
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>5 km</span>
+                    <span>150 km</span>
+                    <span>300 km</span>
+                  </div>
+
+                  {/* Presets rápidos */}
+                  <div className="flex flex-wrap gap-2">
+                    {radiusPresets.map((preset) => (
+                      <button
+                        key={preset.value}
+                        onClick={() =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            upcomingEventsRadius: preset.value,
+                          }))
                         }
-                        className="mt-2"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Você receberá notificações de eventos em um raio de {formData.upcomingEventsRadius} km
-                      </p>
-                    </div>
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                          settings.upcomingEventsRadius === preset.value
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-background border-border text-muted-foreground hover:border-blue-300 hover:text-blue-600"
+                        }`}
+                      >
+                        {preset.label} ({preset.desc})
+                      </button>
+                    ))}
+                  </div>
 
-                    <div>
-                      <Label htmlFor="daysBefore" className="text-sm">
-                        Notificar com antecedência: {formData.upcomingEventsDaysBefore} dia{formData.upcomingEventsDaysBefore !== 1 ? "s" : ""}
-                      </Label>
-                      <Input
-                        id="daysBefore"
-                        type="range"
-                        min="1"
-                        max="30"
-                        step="1"
-                        value={formData.upcomingEventsDaysBefore}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            upcomingEventsDaysBefore: parseInt(e.target.value),
-                          })
-                        }
-                        className="mt-2"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Você será notificado {formData.upcomingEventsDaysBefore} dia{formData.upcomingEventsDaysBefore !== 1 ? "s" : ""} antes do evento
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Price Changes Section */}
-            <div className="bg-card rounded-2xl border border-border p-6">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="w-6 h-6 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-semibold mb-1">Mudanças de Preço</h2>
-                  <p className="text-muted-foreground">
-                    Seja notificado quando o preço dos ingressos mudar
+                  <p className="text-xs text-muted-foreground flex items-start gap-1.5">
+                    <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    Você receberá notificações de eventos em um raio de{" "}
+                    <strong>{settings.upcomingEventsRadius} km</strong> da sua localização.
                   </p>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                <Label htmlFor="enablePriceChanges" className="cursor-pointer">
-                  Ativar notificações de mudança de preço
-                </Label>
-                <Switch
-                  id="enablePriceChanges"
-                  checked={formData.enablePriceChanges}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, enablePriceChanges: checked })
-                  }
-                />
-              </div>
-            </div>
+                {/* Antecedência */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Notificar com antecedência</Label>
+                    <span className="text-lg font-bold text-blue-600">
+                      {settings.upcomingEventsDaysBefore} dia{settings.upcomingEventsDaysBefore !== 1 ? "s" : ""}
+                    </span>
+                  </div>
 
-            {/* Favorite Updates Section */}
-            <div className="bg-card rounded-2xl border border-border p-6">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Heart className="w-6 h-6 text-pink-600" />
+                  <input
+                    type="range"
+                    min="1"
+                    max="30"
+                    step="1"
+                    value={settings.upcomingEventsDaysBefore}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        upcomingEventsDaysBefore: parseInt(e.target.value),
+                      }))
+                    }
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>1 dia</span>
+                    <span>15 dias</span>
+                    <span>30 dias</span>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-semibold mb-1">Atualizações de Favoritos</h2>
-                  <p className="text-muted-foreground">
-                    Receba alertas sobre eventos que você favoritou
-                  </p>
-                </div>
-              </div>
+              </>
+            )}
+          </div>
+        </div>
 
-              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                <Label htmlFor="enableFavoriteUpdates" className="cursor-pointer">
-                  Ativar notificações de eventos favoritos
-                </Label>
-                <Switch
-                  id="enableFavoriteUpdates"
-                  checked={formData.enableFavoriteUpdates}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, enableFavoriteUpdates: checked })
-                  }
-                />
-              </div>
+        {/* Seção: Mudanças de Preço / Lote */}
+        <div className="bg-card rounded-2xl border border-border p-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
+              <TrendingUp className="w-6 h-6 text-orange-600" />
             </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold mb-1">Mudanças de Preço e Lote</h2>
+              <p className="text-sm text-muted-foreground">
+                Seja notificado quando o lote de ingressos estiver prestes a mudar e o preço aumentar.
+              </p>
+            </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isLoading || updateMutation.isPending}
-                className="flex-1"
-              >
-                {isLoading || updateMutation.isPending ? "Salvando..." : "Salvar Preferências"}
-              </Button>
-              <Link href="/" className="flex-1">
-                <Button variant="outline" size="lg" className="w-full">
-                  Cancelar
-                </Button>
-              </Link>
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <Label htmlFor="enablePrice" className="cursor-pointer text-sm font-medium">
+              Ativar notificações de mudança de preço/lote
+            </Label>
+            <Switch
+              id="enablePrice"
+              checked={settings.enablePriceChanges}
+              onCheckedChange={(checked) =>
+                setSettings((prev) => ({ ...prev, enablePriceChanges: checked }))
+              }
+            />
+          </div>
+        </div>
+
+        {/* Seção: Atualizações de Favoritos */}
+        <div className="bg-card rounded-2xl border border-border p-6">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center shrink-0">
+              <Heart className="w-6 h-6 text-pink-600" />
             </div>
-          </form>
-        )}
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold mb-1">Atualizações de Favoritos</h2>
+              <p className="text-sm text-muted-foreground">
+                Receba alertas sobre novidades dos eventos que você favoritou.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <Label htmlFor="enableFavorites" className="cursor-pointer text-sm font-medium">
+              Ativar notificações de eventos favoritos
+            </Label>
+            <Switch
+              id="enableFavorites"
+              checked={settings.enableFavoriteUpdates}
+              onCheckedChange={(checked) =>
+                setSettings((prev) => ({ ...prev, enableFavoriteUpdates: checked }))
+              }
+            />
+          </div>
+        </div>
+
+        {/* Botões de ação */}
+        <div className="flex gap-3 sticky bottom-6">
+          <Button
+            size="lg"
+            className="flex-1 gap-2"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Salvando...
+              </>
+            ) : saved ? (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Salvo!
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Salvar Configurações
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => setLocation("/dashboard")}
+          >
+            Cancelar
+          </Button>
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

@@ -4,7 +4,9 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import Home from "./pages/Home";
+import LoginPage from "./pages/LoginPage";
 import MapPage from "./pages/MapPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import NotificationSettingsPage from "./pages/NotificationSettingsPage";
@@ -21,6 +23,7 @@ function Router() {
       <Route path="/">
         <Redirect to="/dashboard" />
       </Route>
+      <Route path="/login" component={LoginPage} />
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/map" component={MapPage} />
       <Route path="/events" component={EventsPage} />
@@ -40,10 +43,12 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster position="top-right" richColors />
-          <Router />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster position="top-right" richColors />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

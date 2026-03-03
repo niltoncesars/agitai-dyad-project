@@ -10,6 +10,8 @@ import {
   X,
   Check,
   Trash2,
+  LogOut,
+  User,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useLocation } from "wouter";
 import { events } from "@/lib/mock-data";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 // Tipos de notificação
 export interface Notification {
@@ -114,9 +117,11 @@ function timeAgo(date: Date): string {
 export default function Header() {
   const [, setLocation] = useLocation();
   const { toggleSidebar } = useSidebar();
+  const { user, isAuthenticated, logout } = useAuthContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>(() => {
     try {
       const saved = localStorage.getItem("agitai_notifications");
@@ -130,6 +135,7 @@ export default function Header() {
 
   const notifRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -146,6 +152,9 @@ export default function Header() {
       }
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setShowSearch(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -214,14 +223,26 @@ export default function Header() {
   };
 
   // Busca global
-  const searchResults = searchQuery.length >= 2
-    ? events.filter(
-        (e) =>
-          e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          e.city_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          e.category.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5)
-    : [];
+  const searchResults =
+    searchQuery.length >= 2
+      ? events
+          .filter(
+            (e) =>
+              e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              e.city_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              e.category.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+          .slice(0, 5)
+      : [];
+
+  const userInitials = user?.initials || "?";
+  const userName = user?.name || "Visitante";
+
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+    setLocation("/login");
+  };
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 gap-3">
@@ -305,7 +326,10 @@ export default function Header() {
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-sm">Notificações</h3>
                   {unreadCount > 0 && (
-                    <Badge variant="secondary" className="h-5 px-1.5 text-xs rounded-full bg-red-100 text-red-600">
+                    <Badge
+                      variant="secondary"
+                      className="h-5 px-1.5 text-xs rounded-full bg-red-100 text-red-600"
+                    >
                       {unreadCount}
                     </Badge>
                   )}
@@ -359,7 +383,6 @@ export default function Header() {
                         }
                       }}
                     >
-                      {/* Ícone */}
                       <div
                         className={`mt-0.5 h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
                           notif.type === "event_nearby"
@@ -372,10 +395,13 @@ export default function Header() {
                         {getNotifIcon(notif.icon)}
                       </div>
 
-                      {/* Conteúdo */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm leading-tight ${!notif.read ? "font-semibold" : "font-medium"}`}>
+                          <p
+                            className={`text-sm leading-tight ${
+                              !notif.read ? "font-semibold" : "font-medium"
+                            }`}
+                          >
                             {notif.title}
                           </p>
                           <button
@@ -396,7 +422,6 @@ export default function Header() {
                         </p>
                       </div>
 
-                      {/* Indicador de não lido */}
                       {!notif.read && (
                         <div className="mt-2 h-2 w-2 rounded-full bg-blue-500 shrink-0" />
                       )}
@@ -435,17 +460,70 @@ export default function Header() {
           <Settings className="h-5 w-5 text-muted-foreground" />
         </Button>
 
-        {/* Avatar do usuário */}
-        <Avatar className="h-9 w-9 cursor-pointer ml-1">
-          <AvatarFallback
-            className="text-xs font-bold text-white"
-            style={{
-              background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-            }}
+        {/* Avatar do usuário com dropdown */}
+        <div className="relative" ref={userMenuRef}>
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="ml-1 focus:outline-none"
           >
-            SA
-          </AvatarFallback>
-        </Avatar>
+            <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-transparent hover:ring-blue-300 transition-all">
+              <AvatarFallback
+                className="text-xs font-bold text-white"
+                style={{
+                  background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+                }}
+              >
+                {isAuthenticated ? userInitials : "?"}
+              </AvatarFallback>
+            </Avatar>
+          </button>
+
+          {/* Dropdown do usuário */}
+          {showUserMenu && (
+            <div className="absolute right-0 top-full mt-2 w-64 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50">
+              {isAuthenticated ? (
+                <>
+                  <div className="px-4 py-3 border-b border-border">
+                    <p className="text-sm font-semibold">{userName}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left text-sm"
+                      onClick={() => {
+                        setLocation("/notification-settings");
+                        setShowUserMenu(false);
+                      }}
+                    >
+                      <Settings className="h-4 w-4 text-muted-foreground" />
+                      Configurações
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-left text-sm text-red-600"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sair
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="py-1">
+                  <button
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors text-left text-sm"
+                    onClick={() => {
+                      setLocation("/login");
+                      setShowUserMenu(false);
+                    }}
+                  >
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    Fazer Login
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
