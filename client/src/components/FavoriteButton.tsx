@@ -1,97 +1,48 @@
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 interface FavoriteButtonProps {
   eventId: string;
-  eventTitle: string;
-  eventCity: string;
-  eventCategory: string;
-  eventPrice?: string;
-  eventDate?: string;
-  eventImageUrl?: string;
   size?: "sm" | "md" | "lg";
-  showLabel?: boolean;
+  className?: string;
 }
 
 export function FavoriteButton({
   eventId,
-  eventTitle,
-  eventCity,
-  eventCategory,
-  eventPrice,
-  eventDate,
-  eventImageUrl,
   size = "md",
-  showLabel = true,
+  className,
 }: FavoriteButtonProps) {
-  const { user } = useAuth();
-  const [isFav, setIsFav] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
 
-  // Check if favorited
-  const { data: isFavorited } = trpc.favorites.isFavorited.useQuery(
-    { eventId },
-    { enabled: !!user }
-  );
+  // Carregar estado inicial do localStorage
+  useEffect(() => {
+    const favorites = JSON.parse(localStorage.getItem("agitai_favorites") || "[]");
+    setIsFavorited(favorites.includes(eventId));
+  }, [eventId]);
 
-  // Add to favorites
-  const addMutation = trpc.favorites.add.useMutation({
-    onSuccess: () => {
-      setIsFav(true);
-      toast.success("Evento adicionado aos favoritos!");
-    },
-    onError: (error) => {
-      toast.error("Erro ao adicionar aos favoritos");
-      console.error(error);
-    },
-  });
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
 
-  // Remove from favorites
-  const removeMutation = trpc.favorites.remove.useMutation({
-    onSuccess: () => {
-      setIsFav(false);
-      toast.success("Evento removido dos favoritos!");
-    },
-    onError: (error) => {
-      toast.error("Erro ao remover dos favoritos");
-      console.error(error);
-    },
-  });
+    const favorites = JSON.parse(localStorage.getItem("agitai_favorites") || "[]");
+    let newFavorites;
 
-  const handleToggleFavorite = () => {
-    if (!user) {
-      window.location.href = getLoginUrl();
-      return;
-    }
-
-    const currentFav = isFavorited ?? isFav;
-
-    if (currentFav) {
-      removeMutation.mutate({ eventId });
+    if (isFavorited) {
+      newFavorites = favorites.filter((id: string) => id !== eventId);
+      toast.success("Removido dos favoritos");
     } else {
-      addMutation.mutate({
-        eventId,
-        eventTitle,
-        eventCity,
-        eventCategory,
-        eventPrice,
-        eventDate,
-        eventImageUrl,
-      });
+      newFavorites = [...favorites, eventId];
+      toast.success("Adicionado aos favoritos!");
     }
-  };
 
-  const currentFav = isFavorited ?? isFav;
-  const isLoading = addMutation.isPending || removeMutation.isPending;
+    localStorage.setItem("agitai_favorites", JSON.stringify(newFavorites));
+    setIsFavorited(!isFavorited);
 
-  const sizeClasses = {
-    sm: "h-8 w-8",
-    md: "h-10 w-10",
-    lg: "h-12 w-12",
+    // Disparar evento customizado para atualizar outras partes da UI
+    window.dispatchEvent(new Event("favorites_updated"));
   };
 
   const iconSize = {
@@ -105,23 +56,17 @@ export function FavoriteButton({
       variant="ghost"
       size="icon"
       onClick={handleToggleFavorite}
-      disabled={isLoading}
-      className={`${sizeClasses[size]} p-0 hover:bg-red-50`}
-      title={currentFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      className={cn(
+        "rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm transition-all",
+        isFavorited ? "text-red-500" : "text-gray-400 hover:text-red-500",
+        className
+      )}
+      title={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
     >
       <Heart
         size={iconSize[size]}
-        className={`transition-all ${
-          currentFav
-            ? "fill-red-500 text-red-500"
-            : "text-gray-400 hover:text-red-500"
-        }`}
+        className={cn("transition-transform active:scale-125", isFavorited && "fill-current")}
       />
-      {showLabel && (
-        <span className="ml-2 text-sm">
-          {currentFav ? "Favoritado" : "Favoritar"}
-        </span>
-      )}
     </Button>
   );
 }

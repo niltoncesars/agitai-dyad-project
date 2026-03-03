@@ -256,7 +256,10 @@ export default function MapPage() {
                         className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">{event.title}</h4>
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-medium text-sm truncate">{event.title}</h4>
+                          <FavoriteButton eventId={event.id} size="sm" className="h-6 w-6 bg-transparent shadow-none p-0" />
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="secondary" className="rounded-full text-xs">
                             {event.category}

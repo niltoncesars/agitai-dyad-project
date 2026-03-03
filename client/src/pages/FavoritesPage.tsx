@@ -1,196 +1,142 @@
-import { Heart, MapPin, Calendar, Tag, Trash2, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { Heart, Search, Calendar, MapPin, Trash2, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { events, formatCurrency } from "@/lib/mock-data";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Link } from "wouter";
-import { ShareButtons } from "@/components/ShareButtons";
-import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/mock-data";
-import { useEffect, useState } from "react";
 
 export default function FavoritesPage() {
-  const { user, isAuthenticated } = useAuth();
-  const [favorites, setFavorites] = useState<any[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Get user's favorite events
-  const { data: favoritesList, isLoading, refetch } = trpc.favorites.list.useQuery(
-    undefined,
-    { enabled: !!user }
-  );
-
-  // Remove from favorites
-  const removeMutation = trpc.favorites.remove.useMutation({
-    onSuccess: () => {
-      toast.success("Evento removido dos favoritos!");
-      refetch();
-    },
-    onError: (error) => {
-      toast.error("Erro ao remover dos favoritos");
-      console.error(error);
-    },
-  });
+  const loadFavorites = () => {
+    const favorites = JSON.parse(localStorage.getItem("agitai_favorites") || "[]");
+    setFavoriteIds(favorites);
+  };
 
   useEffect(() => {
-    if (favoritesList) {
-      setFavorites(favoritesList);
-    }
-  }, [favoritesList]);
+    loadFavorites();
+    // Ouvir atualizações de favoritos
+    window.addEventListener("favorites_updated", loadFavorites);
+    return () => window.removeEventListener("favorites_updated", loadFavorites);
+  }, []);
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <Heart className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Faça login para ver seus favoritos</h1>
-          <p className="text-muted-foreground mb-6">
-            Salve seus eventos favoritos e acesse-os a qualquer momento
-          </p>
-          <Button
-            onClick={() => (window.location.href = getLoginUrl())}
-            size="lg"
-          >
-            Fazer Login
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const favoriteEvents = events.filter((event) => 
+    favoriteIds.includes(event.id) &&
+    (searchQuery === "" || event.title.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const handleRemoveFavorite = (eventId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newFavorites = favoriteIds.filter(id => id !== eventId);
+    localStorage.setItem("agitai_favorites", JSON.stringify(newFavorites));
+    setFavoriteIds(newFavorites);
+    toast.success("Removido dos favoritos");
+    window.dispatchEvent(new Event("favorites_updated"));
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-      <div className="max-w-6xl mx-auto p-4 lg:p-8">
+    <DashboardLayout>
+      <div className="p-4 lg:p-6 space-y-6 max-w-[1600px] mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <Link href="/map">
-            <Button variant="ghost" className="gap-2 mb-4">
-              <ArrowLeft className="w-4 h-4" />
-              Voltar ao Mapa
-            </Button>
-          </Link>
-          <div className="flex items-center gap-3 mb-2">
-            <Heart className="w-8 h-8 fill-red-500 text-red-500" />
-            <h1 className="text-4xl font-bold">Meus Favoritos</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Meus Favoritos</h1>
+            <p className="text-muted-foreground mt-1">
+              {favoriteEvents.length} eventos salvos na sua lista
+            </p>
           </div>
-          <p className="text-muted-foreground text-lg">
-            {favorites.length} evento{favorites.length !== 1 ? "s" : ""} salvo{favorites.length !== 1 ? "s" : ""}
-          </p>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar favoritos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 bg-card"
+            />
+          </div>
         </div>
 
-        {/* Content */}
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-muted-foreground">Carregando favoritos...</p>
-          </div>
-        ) : favorites.length === 0 ? (
-          <div className="text-center py-16 bg-card rounded-2xl border border-border">
-            <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Nenhum favorito ainda</h2>
-            <p className="text-muted-foreground mb-6">
-              Clique no ícone de coração em qualquer evento para adicionar aos favoritos
+        {favoriteEvents.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-card rounded-2xl border border-dashed border-border/60">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+              <Heart className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold">Sua lista está vazia</h3>
+            <p className="text-muted-foreground text-center max-w-xs mt-2">
+              Explore o mapa e clique no coração para salvar os eventos que você mais gosta.
             </p>
             <Link href="/map">
-              <Button size="lg">Explorar Eventos</Button>
+              <Button className="mt-6 bg-blue-600 hover:bg-blue-700">
+                Explorar Eventos
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {favorites.map((event) => (
-              <div
-                key={event.id}
-                className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                {/* Event Image */}
-                <div className="relative w-full h-48 bg-gradient-to-br from-blue-100 to-blue-50 overflow-hidden">
-                  {event.eventImageUrl ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {favoriteEvents.map((event) => (
+              <Link key={event.id} href={`/map`}>
+                <div className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full flex flex-col">
+                  <div className="relative h-40 overflow-hidden">
                     <img
-                      src={event.eventImageUrl}
-                      alt={event.eventTitle}
-                      className="w-full h-full object-cover"
+                      src={event.image}
+                      alt={event.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Tag className="w-12 h-12 text-blue-300" />
+                    <div className="absolute top-2 right-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleRemoveFavorite(event.id, e)}
+                        className="rounded-full bg-white/80 backdrop-blur-sm hover:bg-white text-red-500 shadow-sm"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  )}
-                  <div className="absolute top-3 right-3">
-                    <Badge className="bg-red-500 hover:bg-red-600 gap-1">
-                      <Heart className="w-3 h-3 fill-current" />
-                      Favoritado
-                    </Badge>
+                    <div className="absolute bottom-2 left-2">
+                      <Badge className="bg-blue-600/90 backdrop-blur-sm border-none">
+                        {event.category}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-
-                {/* Event Details */}
-                <div className="p-4 space-y-3">
-                  <div>
-                    <h3 className="font-semibold text-lg line-clamp-2 text-gray-900">
-                      {event.eventTitle}
-                    </h3>
-                  </div>
-
-                  {/* Category and City */}
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="rounded-full">
-                      {event.eventCategory}
-                    </Badge>
-                    <Badge variant="outline" className="rounded-full gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {event.eventCity}
-                    </Badge>
-                  </div>
-
-                  {/* Date and Price */}
-                  <div className="space-y-2 pt-2 border-t border-border">
-                    {event.eventDate && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="w-4 h-4" />
-                        <span>{event.eventDate}</span>
+                  
+                  <div className="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-bold text-lg line-clamp-1 group-hover:text-blue-600 transition-colors">
+                        {event.title}
+                      </h3>
+                      <div className="flex flex-col gap-1 mt-2">
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Calendar className="h-3.5 w-3.5 mr-2" />
+                          {event.date}
+                        </div>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 mr-2" />
+                          {event.city_name}
+                        </div>
                       </div>
-                    )}
-                    {event.eventPrice && (
-                      <div className="text-lg font-bold text-blue-600">
-                        {parseFloat(event.eventPrice) === 0
-                          ? "Gratuito"
-                          : formatCurrency(parseFloat(event.eventPrice))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-2">
-                    <Link href="/map" className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full">
+                    </div>
+                    
+                    <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
+                      <p className="font-bold text-blue-600">
+                        {event.price === 0 ? "Gratuito" : formatCurrency(event.price)}
+                      </p>
+                      <Button variant="ghost" size="sm" className="text-xs h-8 group-hover:bg-blue-50 group-hover:text-blue-600">
                         Ver no Mapa
                       </Button>
-                    </Link>
-                    <ShareButtons
-                      eventTitle={event.eventTitle}
-                      eventCity={event.eventCity}
-                      eventDate={event.eventDate}
-                      eventPrice={event.eventPrice}
-                      className="w-full"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        removeMutation.mutate({ eventId: event.eventId });
-                      }}
-                      disabled={removeMutation.isPending}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

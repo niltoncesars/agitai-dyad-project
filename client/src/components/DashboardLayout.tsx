@@ -30,6 +30,7 @@ import {
   LogOut,
   Globe,
   X,
+  Heart,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -38,6 +39,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Map, label: "Mapa Interativo", path: "/map" },
   { icon: CalendarDays, label: "Eventos", path: "/events" },
+  { icon: Heart, label: "Favoritos", path: "/favorites" },
   { icon: Building2, label: "Tenants", path: "/tenants" },
   { icon: Ticket, label: "Ingressos", path: "/tickets" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
