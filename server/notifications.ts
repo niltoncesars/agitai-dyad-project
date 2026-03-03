@@ -1,4 +1,4 @@
-import { eq, and, desc, isNull } from "drizzle-orm";
+import { eq, and, desc, isNull, count } from "drizzle-orm";
 import { getDb } from "./db";
 import {
   notificationPreferences,
@@ -156,7 +156,7 @@ export async function getUnreadNotificationCount(userId: number) {
   if (!db) throw new Error("Database not available");
 
   const result = await db
-    .select({ count: require("drizzle-orm").count() })
+    .select({ count: count() })
     .from(userNotifications)
     .where(
       and(
