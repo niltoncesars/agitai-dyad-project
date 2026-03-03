@@ -172,12 +172,13 @@ export default function Header() {
     : [];
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 gap-3">
-      <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={toggleSidebar}>
-        <Menu className="h-5 w-5 text-muted-foreground" />
-      </Button>
+    <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 gap-3">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={toggleSidebar}>
+          <Menu className="h-5 w-5 text-muted-foreground" />
+        </Button>
 
-      <div className="relative flex-1 max-w-md" ref={searchRef}>
+        <div className="relative flex-1 max-w-md" ref={searchRef}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -202,9 +203,10 @@ export default function Header() {
             ))}
           </div>
         )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
         <div className="relative" ref={notifRef}>
           <Button variant="ghost" size="icon" className="h-9 w-9 relative" onClick={() => setShowNotifications(!showNotifications)}>
             <Bell className="h-5 w-5 text-muted-foreground" />
