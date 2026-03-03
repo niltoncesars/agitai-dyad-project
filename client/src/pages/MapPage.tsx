@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info } from "lucide-react";
+import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,14 @@ import L from "leaflet";
 
 const SETTINGS_KEY = "agitai_notification_settings";
 
+interface FavoriteLocation {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+}
+
 interface NotificationSettings {
   enableUpcomingEvents: boolean;
   enablePriceChanges: boolean;
@@ -25,11 +33,11 @@ interface NotificationSettings {
   userLatitude: number | null;
   userLongitude: number | null;
   locationName: string;
+  favoriteLocations: FavoriteLocation[];
 }
 
-// Função para calcular distância entre dois pontos (Haversine formula)
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Raio da Terra em km
+  const R = 6371; 
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a =
@@ -51,18 +59,20 @@ export default function MapPage() {
   
   const mapRef = useRef<any>(null);
   const markersRef = useRef<L.Marker[]>([]);
-  const radiusCircleRef = useRef<L.Circle | null>(null);
-  const userMarkerRef = useRef<L.Marker | null>(null);
+  const radiusLayersRef = useRef<L.LayerGroup | null>(null);
   
   const { user, isAuthenticated } = useAuthContext();
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
 
-  // Carregar configurações do localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem(SETTINGS_KEY);
       if (saved) {
-        setSettings(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setSettings({
+          ...parsed,
+          favoriteLocations: parsed.favoriteLocations || []
+        });
       }
     } catch {}
   }, []);
@@ -74,125 +84,117 @@ export default function MapPage() {
     return true;
   });
 
-  // Identificar eventos dentro do raio
-  const eventsInRange = filteredEvents.filter(event => {
-    if (!settings?.userLatitude || !settings?.userLongitude || !settings?.enableUpcomingEvents) return false;
-    const distance = calculateDistance(
-      settings.userLatitude,
-      settings.userLongitude,
-      event.latitude,
-      event.longitude
-    );
-    return distance <= settings.upcomingEventsRadius;
-  });
+  const isEventInRange = (event: any) => {
+    if (!settings?.enableUpcomingEvents) return false;
+    
+    // Verificar localização principal
+    if (settings.userLatitude && settings.userLongitude) {
+      const dist = calculateDistance(settings.userLatitude, settings.userLongitude, event.latitude, event.longitude);
+      if (dist <= settings.upcomingEventsRadius) return true;
+    }
 
+    // Verificar locais favoritos
+    return settings.favoriteLocations.some(loc => {
+      const dist = calculateDistance(loc.latitude, loc.longitude, event.latitude, event.longitude);
+      return dist <= (loc.radius || settings.upcomingEventsRadius);
+    });
+  };
+
+  const eventsInRangeCount = filteredEvents.filter(isEventInRange).length;
   const categories = Array.from(new Set(events.map((e) => e.category)));
   const totalEvents = filteredEvents.length;
   const totalRevenue = filteredEvents.reduce((sum, event) => sum + (event.price * event.tickets_sold), 0);
 
-  // Callback quando o mapa está pronto
   const handleMapReady = (mapAdapter: any) => {
     mapRef.current = mapAdapter;
     setMapLoading(false);
-    
     const map = mapAdapter.leafletInstance;
-    
-    // Adicionar raio visual se houver localização
+    radiusLayersRef.current = L.layerGroup().addTo(map);
     updateRadiusOnMap(map);
-    
-    // Adicionar marcadores iniciais
     addMarkersToMap(map, filteredEvents);
   };
 
-  // Função para atualizar o raio no mapa
   const updateRadiusOnMap = (map: L.Map) => {
-    // Limpar anteriores
-    if (radiusCircleRef.current) radiusCircleRef.current.remove();
-    if (userMarkerRef.current) userMarkerRef.current.remove();
+    if (!radiusLayersRef.current) return;
+    radiusLayersRef.current.clearLayers();
 
-    if (settings?.userLatitude && settings?.userLongitude && settings.enableUpcomingEvents && showRadius) {
+    if (!showRadius || !settings?.enableUpcomingEvents) return;
+
+    // Raio principal
+    if (settings.userLatitude && settings.userLongitude) {
       const center: [number, number] = [settings.userLatitude, settings.userLongitude];
-      
-      // Círculo do raio
-      radiusCircleRef.current = L.circle(center, {
-        radius: settings.upcomingEventsRadius * 1000, // converter para metros
+      L.circle(center, {
+        radius: settings.upcomingEventsRadius * 1000,
         color: "#3b82f6",
         fillColor: "#3b82f6",
         fillOpacity: 0.1,
         weight: 1,
         dashArray: "5, 5"
-      }).addTo(map);
+      }).addTo(radiusLayersRef.current).bindPopup("Sua Localização Principal");
 
-      // Marcador do usuário
       const userIcon = L.divIcon({
         className: "custom-user-icon",
         html: `<div class="w-4 h-4 bg-blue-600 border-2 border-white rounded-full shadow-lg animate-pulse"></div>`,
         iconSize: [16, 16],
         iconAnchor: [8, 8]
       });
-
-      userMarkerRef.current = L.marker(center, { icon: userIcon })
-        .addTo(map)
-        .bindPopup("Sua localização configurada");
-
-      // Ajustar visualização para mostrar o raio se solicitado
-      if (settings.userLatitude && settings.userLongitude) {
-        // Opcional: focar no raio ao carregar
-        // map.fitBounds(radiusCircleRef.current.getBounds());
-      }
+      L.marker(center, { icon: userIcon }).addTo(radiusLayersRef.current);
     }
+
+    // Raios favoritos
+    settings.favoriteLocations.forEach(loc => {
+      const center: [number, number] = [loc.latitude, loc.longitude];
+      L.circle(center, {
+        radius: (loc.radius || settings.upcomingEventsRadius) * 1000,
+        color: "#ec4899",
+        fillColor: "#ec4899",
+        fillOpacity: 0.1,
+        weight: 1,
+        dashArray: "5, 5"
+      }).addTo(radiusLayersRef.current).bindPopup(`Local Favorito: ${loc.name}`);
+
+      const favIcon = L.divIcon({
+        className: "custom-fav-icon",
+        html: `<div class="w-4 h-4 bg-pink-600 border-2 border-white rounded-full shadow-lg"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
+      L.marker(center, { icon: favIcon }).addTo(radiusLayersRef.current);
+    });
   };
 
-  // Função para adicionar marcadores ao mapa
   const addMarkersToMap = (map: L.Map, eventsToAdd: typeof events) => {
-    // Limpar marcadores antigos
-    markersRef.current.forEach((marker) => {
-      marker.remove();
-    });
+    markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
 
-    // Adicionar novos marcadores
     eventsToAdd.forEach((event) => {
       if (event.latitude && event.longitude) {
-        try {
-          // Verificar se está no raio para destacar
-          const isInRange = settings?.userLatitude && settings?.userLongitude && settings.enableUpcomingEvents
-            ? calculateDistance(settings.userLatitude, settings.userLongitude, event.latitude, event.longitude) <= settings.upcomingEventsRadius
-            : false;
+        const isInRange = isEventInRange(event);
+        const markerColor = isInRange ? "#ef4444" : "#3b82f6";
+        
+        const customIcon = L.divIcon({
+          className: "custom-event-icon",
+          html: `<div class="relative">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white" style="background-color: ${markerColor}">
+              <div class="w-2 h-2 bg-white rounded-full"></div>
+            </div>
+            ${isInRange ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-white rounded-full"></div>' : ''}
+          </div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
 
-          const markerColor = isInRange ? "#ef4444" : "#3b82f6";
-          
-          const customIcon = L.divIcon({
-            className: "custom-event-icon",
-            html: `<div class="relative">
-              <div class="w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white" style="background-color: ${markerColor}">
-                <div class="w-2 h-2 bg-white rounded-full"></div>
-              </div>
-              ${isInRange ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-white rounded-full"></div>' : ''}
-            </div>`,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
-          });
+        const marker = L.marker([event.latitude, event.longitude], {
+          icon: customIcon,
+          title: event.title,
+        }).addTo(map);
 
-          const marker = L.marker([event.latitude, event.longitude], {
-            icon: customIcon,
-            title: event.title,
-          }).addTo(map);
-
-          // Adicionar listener para clique no marcador
-          marker.on("click", () => {
-            setSelectedEvent(event);
-          });
-
-          markersRef.current.push(marker);
-        } catch (err) {
-          console.warn(`Erro ao adicionar marcador para evento ${event.id}:`, err);
-        }
+        marker.on("click", () => setSelectedEvent(event));
+        markersRef.current.push(marker);
       }
     });
   };
 
-  // Atualizar marcadores quando filtros ou configurações mudam
   useEffect(() => {
     if (mapRef.current) {
       const map = mapRef.current.leafletInstance;
@@ -201,37 +203,19 @@ export default function MapPage() {
     }
   }, [selectedCity, selectedCategory, searchQuery, settings, showRadius]);
 
-  // Controles do mapa
-  const handleZoomIn = () => {
-    if (mapRef.current) {
-      const zoom = mapRef.current.getZoom();
-      mapRef.current.setZoom(zoom + 1);
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (mapRef.current) {
-      const zoom = mapRef.current.getZoom();
-      mapRef.current.setZoom(zoom - 1);
-    }
-  };
-
+  const handleZoomIn = () => mapRef.current?.setZoom(mapRef.current.getZoom() + 1);
+  const handleZoomOut = () => mapRef.current?.setZoom(mapRef.current.getZoom() - 1);
   const handleResetMap = () => {
-    if (mapRef.current) {
-      mapRef.current.setCenter({ lat: -14.2350, lng: -51.9253 });
-      mapRef.current.setZoom(4);
-    }
+    mapRef.current?.setCenter({ lat: -14.2350, lng: -51.9253 });
+    mapRef.current?.setZoom(4);
   };
 
   const handleFocusUser = () => {
     if (mapRef.current && settings?.userLatitude && settings?.userLongitude) {
       mapRef.current.setCenter({ lat: settings.userLatitude, lng: settings.userLongitude });
       mapRef.current.setZoom(10);
-      if (radiusCircleRef.current) {
-        mapRef.current.leafletInstance.fitBounds(radiusCircleRef.current.getBounds());
-      }
     } else {
-      toast.info("Configure sua localização nas configurações de notificação.");
+      toast.info("Configure sua localização nas configurações.");
     }
   };
 
@@ -260,12 +244,12 @@ export default function MapPage() {
             </p>
           </div>
           
-          {settings?.userLatitude && (
+          {settings?.enableUpcomingEvents && (
             <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">
               <MapPin className="w-4 h-4 text-blue-600" />
               <div className="text-xs">
-                <p className="font-semibold text-blue-900">Raio de Notificação: {settings.upcomingEventsRadius} km</p>
-                <p className="text-blue-700">{eventsInRange.length} eventos encontrados na sua região</p>
+                <p className="font-semibold text-blue-900">Monitoramento de Raio Ativo</p>
+                <p className="text-blue-700">{eventsInRangeCount} eventos próximos aos seus locais salvos</p>
               </div>
             </div>
           )}
@@ -281,7 +265,7 @@ export default function MapPage() {
                 placeholder="Buscar eventos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent text-sm outline-none w-full placeholder:text-muted-foreground"
+                className="bg-transparent text-sm outline-none w-full"
               />
             </div>
             <Select value={selectedCity} onValueChange={setSelectedCity}>
@@ -290,24 +274,16 @@ export default function MapPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as cidades</SelectItem>
-                {cities.map((city) => (
-                  <SelectItem key={city.id} value={city.id}>
-                    {city.name}
-                  </SelectItem>
-                ))}
+                {cities.map((city) => <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Todas as categorias" />
+                <SelectValue placeholder="Categorias" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas as categorias</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
+                <SelectItem value="all">Todas</SelectItem>
+                {categories.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -315,7 +291,6 @@ export default function MapPage() {
 
         {/* Map and Event List */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Map */}
           <div className="lg:col-span-2 bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -328,48 +303,20 @@ export default function MapPage() {
                   size="sm" 
                   className="gap-2 px-3 h-9"
                   onClick={() => setShowRadius(!showRadius)}
-                  title="Alternar visualização do raio"
                 >
                   <Locate className={`w-4 h-4 ${showRadius ? "text-blue-600" : ""}`} />
-                  <span className="text-xs hidden sm:inline">Ver Raio</span>
+                  <span className="text-xs hidden sm:inline">Ver Raios</span>
                 </Button>
                 <div className="w-px h-6 bg-border mx-1 self-center" />
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-9 w-9 rounded-lg hover:bg-muted"
-                  onClick={handleZoomIn}
-                  title="Ampliar"
-                >
-                  <ZoomIn className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-9 w-9 rounded-lg hover:bg-muted"
-                  onClick={handleZoomOut}
-                  title="Reduzir"
-                >
-                  <ZoomOut className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-9 w-9 rounded-lg hover:bg-muted"
-                  onClick={handleResetMap}
-                  title="Restaurar visualização"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </Button>
+                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleZoomIn}><ZoomIn className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleZoomOut}><ZoomOut className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleResetMap}><RotateCcw className="w-4 h-4" /></Button>
               </div>
             </div>
             <div className="relative w-full h-[500px]">
               {mapLoading && (
                 <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/50">
-                  <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground font-medium">Carregando mapa...</p>
-                  </div>
+                  <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
                 </div>
               )}
               <MapView
@@ -378,30 +325,26 @@ export default function MapPage() {
                 onMapReady={handleMapReady}
                 className="w-full h-full"
               />
-              
-              {/* Botão flutuante para focar no usuário */}
               {settings?.userLatitude && (
                 <button
                   onClick={handleFocusUser}
-                  className="absolute bottom-6 right-6 z-[400] bg-white text-blue-600 p-3 rounded-full shadow-xl border border-blue-100 hover:bg-blue-50 transition-all group"
-                  title="Focar na minha localização"
+                  className="absolute bottom-6 right-6 z-[400] bg-white text-blue-600 p-3 rounded-full shadow-xl border border-blue-100 hover:bg-blue-50 transition-all"
                 >
-                  <Locate className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                  <Locate className="w-6 h-6" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Event List */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm flex flex-col">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <h3 className="font-semibold text-lg flex items-center gap-2">
                 <Layers className="w-5 h-5 text-blue-600" />
                 Eventos ({filteredEvents.length})
               </h3>
-              {eventsInRange.length > 0 && (
+              {eventsInRangeCount > 0 && (
                 <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-none px-2 py-0.5">
-                  {eventsInRange.length} próximos
+                  {eventsInRangeCount} próximos
                 </Badge>
               )}
             </div>
@@ -413,10 +356,7 @@ export default function MapPage() {
                 </div>
               ) : (
                 filteredEvents.map((event) => {
-                  const isInRange = settings?.userLatitude && settings?.userLongitude && settings.enableUpcomingEvents
-                    ? calculateDistance(settings.userLatitude, settings.userLongitude, event.latitude, event.longitude) <= settings.upcomingEventsRadius
-                    : false;
-
+                  const isInRange = isEventInRange(event);
                   return (
                     <div
                       key={event.id}
@@ -427,14 +367,8 @@ export default function MapPage() {
                     >
                       <div className="flex gap-3">
                         <div className="relative">
-                          <img
-                            src={event.image}
-                            alt={event.title}
-                            className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                          />
-                          {isInRange && (
-                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-white rounded-full" title="Próximo a você"></div>
-                          )}
+                          <img src={event.image} alt={event.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                          {isInRange && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-white rounded-full" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
@@ -449,9 +383,7 @@ export default function MapPage() {
                               <MapPin className="w-2 h-2" />
                               {event.city_name}
                             </span>
-                            {isInRange && (
-                              <span className="text-[10px] font-bold text-red-500 ml-auto">Próximo</span>
-                            )}
+                            {isInRange && <span className="text-[10px] font-bold text-red-500 ml-auto">Próximo</span>}
                           </div>
                         </div>
                       </div>
@@ -468,14 +400,8 @@ export default function MapPage() {
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-lg animate-in slide-in-from-bottom-4 duration-300">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               <div className="h-64 md:h-full relative">
-                <img
-                  src={selectedEvent.image}
-                  alt={selectedEvent.title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute top-4 right-4">
-                  <FavoriteButton eventId={selectedEvent.id} />
-                </div>
+                <img src={selectedEvent.image} alt={selectedEvent.title} className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute top-4 right-4"><FavoriteButton eventId={selectedEvent.id} /></div>
               </div>
               <div className="p-6 lg:col-span-2 space-y-6">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -483,9 +409,7 @@ export default function MapPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <Badge className="bg-blue-600 hover:bg-blue-700">{selectedEvent.category}</Badge>
                       <span className="text-sm text-muted-foreground">{selectedEvent.city_name}</span>
-                      {settings?.userLatitude && calculateDistance(settings.userLatitude, settings.userLongitude!, selectedEvent.latitude, selectedEvent.longitude) <= settings.upcomingEventsRadius && (
-                        <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">Próximo a você</Badge>
-                      )}
+                      {isEventInRange(selectedEvent) && <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">Próximo a você</Badge>}
                     </div>
                     <h2 className="text-2xl font-bold">{selectedEvent.title}</h2>
                     <p className="text-muted-foreground mt-2 line-clamp-2">{selectedEvent.description}</p>
@@ -495,52 +419,24 @@ export default function MapPage() {
                     <p className="text-3xl font-bold text-blue-600">{formatCurrency(selectedEvent.price)}</p>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-xl border border-border/50">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase font-semibold">Data</p>
-                    <p className="text-sm font-medium">{selectedEvent.date}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase font-semibold">Horário</p>
-                    <p className="text-sm font-medium">{selectedEvent.time}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase font-semibold">Vendas</p>
-                    <p className="text-sm font-medium">{formatNumber(selectedEvent.tickets_sold)}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase font-semibold">Receita</p>
-                    <p className="text-sm font-medium">{formatCurrency(selectedEvent.price * selectedEvent.tickets_sold)}</p>
-                  </div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase font-semibold">Data</p><p className="text-sm font-medium">{selectedEvent.date}</p></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase font-semibold">Horário</p><p className="text-sm font-medium">{selectedEvent.time}</p></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase font-semibold">Vendas</p><p className="text-sm font-medium">{formatNumber(selectedEvent.tickets_sold)}</p></div>
+                  <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase font-semibold">Receita</p><p className="text-sm font-medium">{formatCurrency(selectedEvent.price * selectedEvent.tickets_sold)}</p></div>
                 </div>
-
                 <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
-                  <Button 
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 h-12 px-8 rounded-xl shadow-md shadow-blue-200"
-                    onClick={handleBuyClick}
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Comprar Ingressos
+                  <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 h-12 px-8 rounded-xl" onClick={handleBuyClick}>
+                    <ShoppingCart className="w-4 h-4 mr-2" />Comprar Ingressos
                   </Button>
-                  <div className="w-full sm:w-auto border-l border-border pl-0 sm:pl-4">
-                    <ShareButtons 
-                      title={selectedEvent.title} 
-                      text={selectedEvent.description}
-                    />
-                  </div>
+                  <div className="w-full sm:w-auto border-l border-border pl-0 sm:pl-4"><ShareButtons title={selectedEvent.title} text={selectedEvent.description} /></div>
                 </div>
               </div>
             </div>
           </div>
         )}
       </div>
-
-      <BuyTicketModal
-        event={selectedEvent}
-        open={showBuyModal}
-        onOpenChange={setShowBuyModal}
-      />
+      <BuyTicketModal event={selectedEvent} open={showBuyModal} onOpenChange={setShowBuyModal} />
     </DashboardLayout>
   );
 }

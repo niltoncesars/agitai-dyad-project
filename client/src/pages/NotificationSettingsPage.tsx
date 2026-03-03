@@ -6,21 +6,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
 import {
   Bell,
   MapPin,
-  TrendingUp,
   Heart,
-  Save,
   ArrowLeft,
   Locate,
   Info,
   CheckCircle2,
+  Plus,
+  Trash2,
+  Navigation,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const SETTINGS_KEY = "agitai_notification_settings";
+
+interface FavoriteLocation {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+}
 
 interface NotificationSettings {
   enableUpcomingEvents: boolean;
@@ -31,6 +39,7 @@ interface NotificationSettings {
   userLatitude: number | null;
   userLongitude: number | null;
   locationName: string;
+  favoriteLocations: FavoriteLocation[];
 }
 
 const defaultSettings: NotificationSettings = {
@@ -42,12 +51,20 @@ const defaultSettings: NotificationSettings = {
   userLatitude: null,
   userLongitude: null,
   locationName: "",
+  favoriteLocations: [],
 };
 
 function loadSettings(): NotificationSettings {
   try {
     const saved = localStorage.getItem(SETTINGS_KEY);
-    if (saved) return { ...defaultSettings, ...JSON.parse(saved) };
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { 
+        ...defaultSettings, 
+        ...parsed,
+        favoriteLocations: parsed.favoriteLocations || []
+      };
+    }
   } catch {}
   return defaultSettings;
 }
@@ -56,22 +73,13 @@ function saveSettings(settings: NotificationSettings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
-// Raios pré-definidos para referência visual
-const radiusPresets = [
-  { value: 10, label: "10 km", desc: "Bairro" },
-  { value: 25, label: "25 km", desc: "Cidade" },
-  { value: 50, label: "50 km", desc: "Região" },
-  { value: 100, label: "100 km", desc: "Metropolitana" },
-  { value: 200, label: "200 km", desc: "Estado" },
-];
-
 export default function NotificationSettingsPage() {
   const { user, isAuthenticated } = useAuthContext();
   const [, setLocation] = useLocation();
   const [settings, setSettings] = useState<NotificationSettings>(loadSettings);
   const [isSaving, setIsSaving] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [newLocName, setNewLocName] = useState("");
 
   // Redirecionar para login se não autenticado
   if (!isAuthenticated) {
@@ -107,9 +115,7 @@ export default function NotificationSettingsPage() {
     setTimeout(() => {
       saveSettings(settings);
       setIsSaving(false);
-      setSaved(true);
       toast.success("Configurações salvas com sucesso!");
-      setTimeout(() => setSaved(false), 3000);
     }, 500);
   };
 
@@ -125,7 +131,6 @@ export default function NotificationSettingsPage() {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        // Tentar obter nome da localização via API reversa
         let locationName = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
         try {
           const res = await fetch(
@@ -150,310 +155,196 @@ export default function NotificationSettingsPage() {
       },
       (error) => {
         setIsLocating(false);
-        if (error.code === error.PERMISSION_DENIED) {
-          toast.error("Permissão de localização negada. Habilite nas configurações do navegador.");
-        } else {
-          toast.error("Não foi possível obter sua localização.");
-        }
+        toast.error("Não foi possível obter sua localização.");
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
+  };
+
+  const addFavoriteLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocalização não suportada.");
+      return;
+    }
+
+    if (!newLocName.trim()) {
+      toast.error("Dê um nome ao seu local favorito.");
+      return;
+    }
+
+    toast.info("Obtendo localização para o novo local...");
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const newLoc: FavoriteLocation = {
+          id: Date.now().toString(),
+          name: newLocName,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          radius: settings.upcomingEventsRadius,
+        };
+
+        setSettings(prev => ({
+          ...prev,
+          favoriteLocations: [...prev.favoriteLocations, newLoc]
+        }));
+        setNewLocName("");
+        toast.success(`Local "${newLocName}" adicionado aos favoritos!`);
+      },
+      () => toast.error("Falha ao obter localização.")
+    );
+  };
+
+  const removeFavoriteLocation = (id: string) => {
+    setSettings(prev => ({
+      ...prev,
+      favoriteLocations: prev.favoriteLocations.filter(loc => loc.id !== id)
+    }));
+    toast.success("Local favorito removido.");
   };
 
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto p-6 lg:p-8 space-y-8">
         {/* Header */}
-        <div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2 mb-4 -ml-2"
-            onClick={() => setLocation("/dashboard")}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar
-          </Button>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Bell className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">Configurações de Notificação</h1>
-              <p className="text-sm text-muted-foreground">
-                Logado como <span className="font-medium">{user?.name}</span>
-              </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 mb-4 -ml-2"
+              onClick={() => setLocation("/dashboard")}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <Bell className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Configurações de Notificação</h1>
+                <p className="text-sm text-muted-foreground">Logado como {user?.name}</p>
+              </div>
             </div>
           </div>
+          <Button onClick={handleSave} disabled={isSaving} className="gap-2 bg-blue-600 hover:bg-blue-700">
+            {isSaving ? "Salvando..." : "Salvar Alterações"}
+          </Button>
         </div>
 
-        {/* Seção: Localização do Usuário */}
-        <div className="bg-card rounded-2xl border border-border p-6">
+        {/* Localização Atual */}
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-start gap-4 mb-6">
             <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center shrink-0">
               <Locate className="w-6 h-6 text-green-600" />
             </div>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold mb-1">Sua Localização</h2>
-              <p className="text-sm text-muted-foreground">
-                Defina sua localização para receber notificações de eventos no raio configurado.
-              </p>
+              <h2 className="text-lg font-semibold">Localização Principal</h2>
+              <p className="text-sm text-muted-foreground">Localização base para alertas automáticos.</p>
             </div>
           </div>
-
+          
           <div className="space-y-4">
-            <Button
-              variant="outline"
-              className="gap-2 w-full sm:w-auto"
-              onClick={handleGetLocation}
-              disabled={isLocating}
-            >
-              {isLocating ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin" />
-                  Detectando localização...
-                </>
-              ) : (
-                <>
-                  <MapPin className="w-4 h-4" />
-                  Detectar minha localização
-                </>
-              )}
+            <Button variant="outline" onClick={handleGetLocation} disabled={isLocating} className="gap-2">
+              <MapPin className="w-4 h-4" />
+              {isLocating ? "Detectando..." : "Atualizar Localização Atual"}
             </Button>
-
             {settings.locationName && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>
-                  Localização atual: <strong>{settings.locationName}</strong>
-                </span>
-              </div>
-            )}
-
-            {!settings.locationName && (
-              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
-                <Info className="h-4 w-4 shrink-0" />
-                <span>
-                  Nenhuma localização definida. Clique no botão acima para detectar automaticamente.
-                </span>
+              <div className="p-3 bg-green-50 border border-green-100 rounded-lg text-green-700 text-sm flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{settings.locationName}</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Seção: Eventos Próximos com Raio */}
-        <div className="bg-card rounded-2xl border border-border p-6">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
-              <MapPin className="w-6 h-6 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold mb-1">Eventos Próximos</h2>
-              <p className="text-sm text-muted-foreground">
-                Receba alertas quando houver eventos ocorrendo dentro do raio configurado.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            {/* Toggle */}
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-              <Label htmlFor="enableUpcoming" className="cursor-pointer text-sm font-medium">
-                Ativar notificações de eventos próximos
-              </Label>
-              <Switch
-                id="enableUpcoming"
-                checked={settings.enableUpcomingEvents}
-                onCheckedChange={(checked) =>
-                  setSettings((prev) => ({ ...prev, enableUpcomingEvents: checked }))
-                }
-              />
-            </div>
-
-            {settings.enableUpcomingEvents && (
-              <>
-                {/* Raio de distância */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Raio de distância</Label>
-                    <span className="text-2xl font-bold text-blue-600">
-                      {settings.upcomingEventsRadius} km
-                    </span>
-                  </div>
-
-                  <input
-                    type="range"
-                    min="5"
-                    max="300"
-                    step="5"
-                    value={settings.upcomingEventsRadius}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        upcomingEventsRadius: parseInt(e.target.value),
-                      }))
-                    }
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                  />
-
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>5 km</span>
-                    <span>150 km</span>
-                    <span>300 km</span>
-                  </div>
-
-                  {/* Presets rápidos */}
-                  <div className="flex flex-wrap gap-2">
-                    {radiusPresets.map((preset) => (
-                      <button
-                        key={preset.value}
-                        onClick={() =>
-                          setSettings((prev) => ({
-                            ...prev,
-                            upcomingEventsRadius: preset.value,
-                          }))
-                        }
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                          settings.upcomingEventsRadius === preset.value
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-background border-border text-muted-foreground hover:border-blue-300 hover:text-blue-600"
-                        }`}
-                      >
-                        {preset.label} ({preset.desc})
-                      </button>
-                    ))}
-                  </div>
-
-                  <p className="text-xs text-muted-foreground flex items-start gap-1.5">
-                    <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                    Você receberá notificações de eventos em um raio de{" "}
-                    <strong>{settings.upcomingEventsRadius} km</strong> da sua localização.
-                  </p>
-                </div>
-
-                {/* Antecedência */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Notificar com antecedência</Label>
-                    <span className="text-lg font-bold text-blue-600">
-                      {settings.upcomingEventsDaysBefore} dia{settings.upcomingEventsDaysBefore !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-
-                  <input
-                    type="range"
-                    min="1"
-                    max="30"
-                    step="1"
-                    value={settings.upcomingEventsDaysBefore}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        upcomingEventsDaysBefore: parseInt(e.target.value),
-                      }))
-                    }
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                  />
-
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>1 dia</span>
-                    <span>15 dias</span>
-                    <span>30 dias</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Seção: Mudanças de Preço / Lote */}
-        <div className="bg-card rounded-2xl border border-border p-6">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
-              <TrendingUp className="w-6 h-6 text-orange-600" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold mb-1">Mudanças de Preço e Lote</h2>
-              <p className="text-sm text-muted-foreground">
-                Seja notificado quando o lote de ingressos estiver prestes a mudar e o preço aumentar.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-            <Label htmlFor="enablePrice" className="cursor-pointer text-sm font-medium">
-              Ativar notificações de mudança de preço/lote
-            </Label>
-            <Switch
-              id="enablePrice"
-              checked={settings.enablePriceChanges}
-              onCheckedChange={(checked) =>
-                setSettings((prev) => ({ ...prev, enablePriceChanges: checked }))
-              }
-            />
-          </div>
-        </div>
-
-        {/* Seção: Atualizações de Favoritos */}
-        <div className="bg-card rounded-2xl border border-border p-6">
+        {/* Locais Favoritos */}
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-start gap-4 mb-6">
             <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center shrink-0">
               <Heart className="w-6 h-6 text-pink-600" />
             </div>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold mb-1">Atualizações de Favoritos</h2>
-              <p className="text-sm text-muted-foreground">
-                Receba alertas sobre novidades dos eventos que você favoritou.
-              </p>
+              <h2 className="text-lg font-semibold">Locais Favoritos</h2>
+              <p className="text-sm text-muted-foreground">Adicione outros locais para monitorar eventos próximos (ex: Trabalho, Casa de Praia).</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-            <Label htmlFor="enableFavorites" className="cursor-pointer text-sm font-medium">
-              Ativar notificações de eventos favoritos
-            </Label>
-            <Switch
-              id="enableFavorites"
-              checked={settings.enableFavoriteUpdates}
-              onCheckedChange={(checked) =>
-                setSettings((prev) => ({ ...prev, enableFavoriteUpdates: checked }))
-              }
-            />
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input 
+                placeholder="Nome do local (ex: Escritório)" 
+                value={newLocName}
+                onChange={(e) => setNewLocName(e.target.value)}
+                className="max-w-xs"
+              />
+              <Button onClick={addFavoriteLocation} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Adicionar Local
+              </Button>
+            </div>
+
+            <div className="grid gap-3 mt-4">
+              {settings.favoriteLocations.length === 0 ? (
+                <div className="text-center p-8 border-2 border-dashed border-border rounded-xl text-muted-foreground">
+                  <Navigation className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm">Nenhum local favorito adicionado ainda.</p>
+                </div>
+              ) : (
+                settings.favoriteLocations.map((loc) => (
+                  <div key={loc.id} className="flex items-center justify-between p-4 bg-muted/30 border border-border rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                        <MapPin className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{loc.name}</p>
+                        <p className="text-xs text-muted-foreground">{loc.latitude.toFixed(4)}, {loc.longitude.toFixed(4)}</p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => removeFavoriteLocation(loc.id)}
+                      className="text-muted-foreground hover:text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Botões de ação */}
-        <div className="flex gap-3 sticky bottom-6">
-          <Button
-            size="lg"
-            className="flex-1 gap-2"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Salvando...
-              </>
-            ) : saved ? (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                Salvo!
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Salvar Configurações
-              </>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => setLocation("/dashboard")}
-          >
-            Cancelar
-          </Button>
+        {/* Configurações Gerais de Raio */}
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">Preferências de Alerta</h2>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <Label>Raio de busca padrão</Label>
+              <span className="font-bold text-blue-600">{settings.upcomingEventsRadius} km</span>
+            </div>
+            <input
+              type="range"
+              min="5"
+              max="300"
+              step="5"
+              value={settings.upcomingEventsRadius}
+              onChange={(e) => setSettings(prev => ({ ...prev, upcomingEventsRadius: parseInt(e.target.value) }))}
+              className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
+            <div className="flex items-center justify-between p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+              <div className="space-y-0.5">
+                <Label className="text-blue-900">Notificações Ativas</Label>
+                <p className="text-xs text-blue-700">Alertar sobre eventos em todos os locais salvos.</p>
+              </div>
+              <Switch 
+                checked={settings.enableUpcomingEvents}
+                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enableUpcomingEvents: checked }))}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>
