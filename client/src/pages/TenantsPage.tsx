@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { events, formatCurrency } from "@/lib/mock-data";
 import DashboardLayout from "@/components/DashboardLayout";
+import { RatingSystem } from "@/components/RatingSystem";
 
 const tenants = [
   {
@@ -249,7 +250,7 @@ export default function TenantsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border mb-4">
                   <div>
                     <p className="text-xs text-muted-foreground">Eventos</p>
                     <p className="text-lg font-bold">{tenant.eventsCount}</p>
@@ -258,6 +259,10 @@ export default function TenantsPage() {
                     <p className="text-xs text-muted-foreground">Receita</p>
                     <p className="text-sm font-bold text-blue-600">{formatCurrency(tenant.totalRevenue)}</p>
                   </div>
+                </div>
+
+                <div className="mb-4 pb-4 border-b border-border">
+                  <RatingSystem tenantId={tenant.id} tenantName={tenant.name} />
                 </div>
 
                 <div className="flex gap-2 mt-4">
