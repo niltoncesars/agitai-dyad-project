@@ -12,6 +12,7 @@ import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default function MapPage() {
   const [selectedCity, setSelectedCity] = useState("all");
@@ -126,6 +127,7 @@ export default function MapPage() {
   };
 
   return (
+    <DashboardLayout>
     <div className="p-4 lg:p-6 space-y-6 max-w-[1600px] mx-auto">
       {/* Header */}
       <div className="animate-fade-in">
@@ -371,5 +373,6 @@ export default function MapPage() {
         />
       )}
     </div>
+    </DashboardLayout>
   );
 }

@@ -8,13 +8,25 @@ import Home from "./pages/Home";
 import MapPage from "./pages/MapPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import NotificationSettingsPage from "./pages/NotificationSettingsPage";
+import DashboardPage from "./pages/DashboardPage";
+import EventsPage from "./pages/EventsPage";
+import TenantsPage from "./pages/TenantsPage";
+import TicketsPage from "./pages/TicketsPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import InfrastructurePage from "./pages/InfrastructurePage";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/dashboard"} component={DashboardPage} />
       <Route path={"/map"} component={MapPage} />
+      <Route path={"/events"} component={EventsPage} />
+      <Route path={"/tenants"} component={TenantsPage} />
+      <Route path={"/tickets"} component={TicketsPage} />
+      <Route path={"/analytics"} component={AnalyticsPage} />
+      <Route path={"/infrastructure"} component={InfrastructurePage} />
       <Route path={"/favorites"} component={FavoritesPage} />
       <Route path={"/notification-settings"} component={NotificationSettingsPage} />
       <Route path={"/404"} component={NotFound} />
