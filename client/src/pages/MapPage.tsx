@@ -469,10 +469,10 @@ export default function MapPage() {
 
                 {/* Tabs */}
                 <div className="border-b border-border">
-                  <div className="flex gap-6">
+                  <div className="flex w-full">
                     <button
                       onClick={() => setActiveTab("reviews")}
-                      className={`py-3 px-1 font-medium text-sm border-b-2 transition-colors ${
+                      className={`flex-1 py-3 px-1 font-medium text-sm border-b-2 transition-colors text-center ${
                         activeTab === "reviews"
                           ? "border-b-red-500 text-foreground"
                           : "border-b-transparent text-muted-foreground hover:text-foreground"
@@ -482,7 +482,7 @@ export default function MapPage() {
                     </button>
                     <button
                       onClick={() => setActiveTab("info")}
-                      className={`py-3 px-1 font-medium text-sm border-b-2 transition-colors ${
+                      className={`flex-1 py-3 px-1 font-medium text-sm border-b-2 transition-colors text-center ${
                         activeTab === "info"
                           ? "border-b-red-500 text-foreground"
                           : "border-b-transparent text-muted-foreground hover:text-foreground"
@@ -494,13 +494,22 @@ export default function MapPage() {
                 </div>
 
                 {/* Tab Content */}
-                <div className="max-h-[400px] overflow-y-auto">
+                <div className="max-h-[400px] overflow-y-auto space-y-4">
                   {activeTab === "reviews" && (
-                    <EventReviews 
-                      eventId={selectedEvent.id} 
-                      eventTitle={selectedEvent.title}
-                      onStatsChange={setReviewStats}
-                    />
+                    <div className="space-y-4">
+                      {reviewStats && (
+                        <EventRatingSummary 
+                          rating={reviewStats.averageRating} 
+                          totalReviews={reviewStats.totalReviews}
+                          ratingDistribution={reviewStats.ratingDistribution}
+                        />
+                      )}
+                      <EventReviews 
+                        eventId={selectedEvent.id} 
+                        eventTitle={selectedEvent.title}
+                        onStatsChange={setReviewStats}
+                      />
+                    </div>
                   )}
                   
                   {activeTab === "info" && (
