@@ -56,13 +56,13 @@ export function CheckInButton({ eventId, eventTitle }: CheckInButtonProps) {
     >
       <div className="relative flex items-center justify-center">
         {/* Fundo circular cinza claro */}
-        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
           {isCheckedIn ? (
-            // Ícone personalizado quando ativado
+            // Ícone personalizado quando ativado - ajustado para preencher melhor mantendo proporção
             <img
               src="/icons/location-pin-active.png"
               alt="Presença confirmada"
-              className="w-6 h-6 object-contain"
+              className="w-7 h-7 object-contain"
             />
           ) : (
             // Ícone padrão quando desativado
