@@ -13,16 +13,16 @@ interface EventRatingSummaryProps {
 }
 
 export function EventRatingSummary({ rating, totalReviews, ratingDistribution }: EventRatingSummaryProps) {
-  // Distribuição padrão se não for fornecida
+  // Distribuição real ou padrão
   const distribution = ratingDistribution || {
-    5: Math.floor(totalReviews * 0.5),
-    4: Math.floor(totalReviews * 0.25),
-    3: Math.floor(totalReviews * 0.15),
-    2: Math.floor(totalReviews * 0.07),
-    1: Math.floor(totalReviews * 0.03),
+    5: 0,
+    4: 0,
+    3: 0,
+    2: 0,
+    1: 0,
   };
 
-  const maxCount = Math.max(...Object.values(distribution));
+  const maxCount = Math.max(...Object.values(distribution), 1);
 
   const formatCount = (count: number) => {
     if (count >= 1000) {

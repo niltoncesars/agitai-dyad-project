@@ -3,7 +3,7 @@ import { Star, Heart, MessageCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
-interface Review {
+export interface Review {
   id: string;
   userName: string;
   rating: number;
@@ -13,12 +13,25 @@ interface Review {
   liked?: boolean;
 }
 
+export interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+}
+
 interface EventReviewsProps {
   eventId: string;
   eventTitle: string;
+  onStatsChange?: (stats: ReviewStats) => void;
 }
 
-export function EventReviews({ eventId, eventTitle }: EventReviewsProps) {
+export function EventReviews({ eventId, eventTitle, onStatsChange }: EventReviewsProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [userRating, setUserRating] = useState(0);
   const [userComment, setUserComment] = useState("");
@@ -26,11 +39,39 @@ export function EventReviews({ eventId, eventTitle }: EventReviewsProps) {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
+  // Calcular estatísticas das avaliações
+  const calculateStats = (reviewsList: Review[]): ReviewStats => {
+    if (reviewsList.length === 0) {
+      return {
+        averageRating: 0,
+        totalReviews: 0,
+        ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      };
+    }
+
+    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    let totalRating = 0;
+
+    reviewsList.forEach((review) => {
+      totalRating += review.rating;
+      distribution[review.rating as keyof typeof distribution]++;
+    });
+
+    return {
+      averageRating: Number((totalRating / reviewsList.length).toFixed(1)),
+      totalReviews: reviewsList.length,
+      ratingDistribution: distribution,
+    };
+  };
+
   // Carregar avaliações do localStorage
   useEffect(() => {
     const storedReviews = localStorage.getItem(`event_reviews_${eventId}`);
     if (storedReviews) {
-      setReviews(JSON.parse(storedReviews));
+      const parsedReviews = JSON.parse(storedReviews);
+      setReviews(parsedReviews);
+      const stats = calculateStats(parsedReviews);
+      onStatsChange?.(stats);
     } else {
       // Adicionar algumas avaliações de exemplo
       const mockReviews: Review[] = [
@@ -64,8 +105,10 @@ export function EventReviews({ eventId, eventTitle }: EventReviewsProps) {
       ];
       setReviews(mockReviews);
       localStorage.setItem(`event_reviews_${eventId}`, JSON.stringify(mockReviews));
+      const stats = calculateStats(mockReviews);
+      onStatsChange?.(stats);
     }
-  }, [eventId]);
+  }, [eventId, onStatsChange]);
 
   const handleSubmitReview = () => {
     if (!userName || !userRating || !userComment) return;
@@ -83,6 +126,10 @@ export function EventReviews({ eventId, eventTitle }: EventReviewsProps) {
     const updatedReviews = [newReview, ...reviews];
     setReviews(updatedReviews);
     localStorage.setItem(`event_reviews_${eventId}`, JSON.stringify(updatedReviews));
+
+    // Atualizar estatísticas
+    const stats = calculateStats(updatedReviews);
+    onStatsChange?.(stats);
 
     // Limpar formulário
     setUserName("");

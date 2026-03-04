@@ -9,7 +9,7 @@ import { BuyTicketModal } from "@/components/BuyTicketModal";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ShareButtons } from "@/components/ShareButtons";
 import { EventRatingSummary } from "@/components/EventRatingSummary";
-import { EventReviews } from "@/components/EventReviews";
+import { EventReviews, ReviewStats } from "@/components/EventReviews";
 import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -58,6 +58,7 @@ export default function MapPage() {
   const [mapLoading, setMapLoading] = useState(true);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showRadius, setShowRadius] = useState(true);
+  const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   
   const mapRef = useRef<any>(null);
   const markersRef = useRef<L.Marker[]>([]);
@@ -492,9 +493,19 @@ export default function MapPage() {
               
               {/* Right Column: Ratings and Reviews */}
               <div className="lg:col-span-1 space-y-4 max-h-[600px] overflow-y-auto">
-                <EventRatingSummary rating={selectedEvent.rating || 0} totalReviews={selectedEvent.rating ? Math.floor(Math.random() * 1000) + 100 : 0} />
+                {reviewStats && (
+                  <EventRatingSummary 
+                    rating={reviewStats.averageRating} 
+                    totalReviews={reviewStats.totalReviews}
+                    ratingDistribution={reviewStats.ratingDistribution}
+                  />
+                )}
                 <div className="border-t border-border pt-4">
-                  <EventReviews eventId={selectedEvent.id} eventTitle={selectedEvent.title} />
+                  <EventReviews 
+                    eventId={selectedEvent.id} 
+                    eventTitle={selectedEvent.title}
+                    onStatsChange={setReviewStats}
+                  />
                 </div>
               </div>
             </div>
