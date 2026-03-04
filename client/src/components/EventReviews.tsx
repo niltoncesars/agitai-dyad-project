@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
-import { Star, Heart, MessageCircle, Send } from "lucide-react";
+import { Star, Heart, MessageCircle, Send, Reply, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuthContext } from "@/contexts/AuthContext";
+
+export interface Reply {
+  id: string;
+  authorName: string;
+  authorType: "tenant" | "user"; // tenant = organizador, user = usuário comum
+  text: string;
+  timestamp: number;
+}
 
 export interface Review {
   id: string;
@@ -11,6 +20,7 @@ export interface Review {
   timestamp: number;
   likes: number;
   liked?: boolean;
+  replies?: Reply[];
 }
 
 export interface ReviewStats {
@@ -28,16 +38,20 @@ export interface ReviewStats {
 interface EventReviewsProps {
   eventId: string;
   eventTitle: string;
+  tenantId?: string;
   onStatsChange?: (stats: ReviewStats) => void;
 }
 
-export function EventReviews({ eventId, eventTitle, onStatsChange }: EventReviewsProps) {
+export function EventReviews({ eventId, eventTitle, tenantId, onStatsChange }: EventReviewsProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [userRating, setUserRating] = useState(0);
   const [userComment, setUserComment] = useState("");
   const [userName, setUserName] = useState("");
   const [hoveredRating, setHoveredRating] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const { user, isAuthenticated } = useAuthContext();
 
   // Calcular estatísticas das avaliações
   const calculateStats = (reviewsList: Review[]): ReviewStats => {
@@ -83,6 +97,15 @@ export function EventReviews({ eventId, eventTitle, onStatsChange }: EventReview
           timestamp: Date.now() - 86400000,
           likes: 42,
           liked: false,
+          replies: [
+            {
+              id: "reply-1",
+              authorName: "Lollapalooza Brasil",
+              authorType: "tenant",
+              text: "Obrigado, João! Ficamos felizes que você tenha aprovado. Esperamos vê-lo novamente no próximo ano!",
+              timestamp: Date.now() - 82800000,
+            },
+          ],
         },
         {
           id: "rev-2",
@@ -92,6 +115,7 @@ export function EventReviews({ eventId, eventTitle, onStatsChange }: EventReview
           timestamp: Date.now() - 172800000,
           likes: 18,
           liked: false,
+          replies: [],
         },
         {
           id: "rev-3",
@@ -101,6 +125,7 @@ export function EventReviews({ eventId, eventTitle, onStatsChange }: EventReview
           timestamp: Date.now() - 259200000,
           likes: 67,
           liked: false,
+          replies: [],
         },
       ];
       setReviews(mockReviews);
@@ -121,6 +146,7 @@ export function EventReviews({ eventId, eventTitle, onStatsChange }: EventReview
       timestamp: Date.now(),
       likes: 0,
       liked: false,
+      replies: [],
     };
 
     const updatedReviews = [newReview, ...reviews];
@@ -136,6 +162,32 @@ export function EventReviews({ eventId, eventTitle, onStatsChange }: EventReview
     setUserRating(0);
     setUserComment("");
     setShowReviewForm(false);
+  };
+
+  const handleSubmitReply = (reviewId: string) => {
+    if (!replyText.trim()) return;
+
+    const updatedReviews = reviews.map((review) => {
+      if (review.id === reviewId) {
+        const newReply: Reply = {
+          id: `reply-${Date.now()}`,
+          authorName: user?.name || "Organizador",
+          authorType: "tenant",
+          text: replyText,
+          timestamp: Date.now(),
+        };
+        return {
+          ...review,
+          replies: [...(review.replies || []), newReply],
+        };
+      }
+      return review;
+    });
+
+    setReviews(updatedReviews);
+    localStorage.setItem(`event_reviews_${eventId}`, JSON.stringify(updatedReviews));
+    setReplyingTo(null);
+    setReplyText("");
   };
 
   const handleLike = (reviewId: string) => {
@@ -162,6 +214,8 @@ export function EventReviews({ eventId, eventTitle, onStatsChange }: EventReview
     if (seconds < 2592000) return `${Math.floor(seconds / 86400)}d atrás`;
     return `${Math.floor(seconds / 2592000)}mês atrás`;
   };
+
+  const isTenant = isAuthenticated && user?.role === "tenant";
 
   return (
     <div className="space-y-6">
@@ -256,7 +310,7 @@ export function EventReviews({ eventId, eventTitle, onStatsChange }: EventReview
         ) : (
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {reviews.map((review) => (
-              <div key={review.id} className="bg-card rounded-lg p-4 border border-border/50 space-y-2">
+              <div key={review.id} className="bg-card rounded-lg p-4 border border-border/50 space-y-3">
                 {/* Header: Name and Rating */}
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -297,7 +351,75 @@ export function EventReviews({ eventId, eventTitle, onStatsChange }: EventReview
                     />
                     {review.likes > 0 && <span>{review.likes}</span>}
                   </Button>
+
+                  {/* Reply Button (apenas para Tenants) */}
+                  {isTenant && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 gap-1 text-xs text-muted-foreground"
+                      onClick={() => setReplyingTo(replyingTo === review.id ? null : review.id)}
+                    >
+                      <Reply className="w-3.5 h-3.5" />
+                      Responder
+                    </Button>
+                  )}
                 </div>
+
+                {/* Replies */}
+                {review.replies && review.replies.length > 0 && (
+                  <div className="ml-4 space-y-2 pt-2 border-l-2 border-border/50 pl-3">
+                    {review.replies.map((reply) => (
+                      <div key={reply.id} className="bg-muted/30 rounded p-3 space-y-1">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-semibold text-xs text-primary">
+                              {reply.authorType === "tenant" ? "🏢 " : ""}{reply.authorName}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{timeAgo(reply.timestamp)}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-foreground/80">{reply.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Reply Form */}
+                {isTenant && replyingTo === review.id && (
+                  <div className="ml-4 space-y-2 pt-2 border-l-2 border-primary/50 pl-3">
+                    <div className="space-y-2">
+                      <Textarea
+                        placeholder="Escreva sua resposta..."
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        className="min-h-16 text-sm resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          className="flex-1 gap-1 h-8"
+                          onClick={() => handleSubmitReply(review.id)}
+                          disabled={!replyText.trim()}
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          Enviar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-3"
+                          onClick={() => {
+                            setReplyingTo(null);
+                            setReplyText("");
+                          }}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
