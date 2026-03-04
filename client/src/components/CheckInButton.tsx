@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface CheckInButtonProps {
   eventId: string;
@@ -50,23 +49,32 @@ export function CheckInButton({ eventId, eventTitle }: CheckInButtonProps) {
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className={`h-9 px-3 gap-1.5 transition-colors ${
-        isCheckedIn
-          ? "text-blue-500 bg-blue-500/10 hover:bg-blue-500/20"
-          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-      }`}
+    <button
       onClick={handleCheckIn}
       title={isCheckedIn ? "Remover confirmação de presença" : "Confirmar presença"}
+      className="flex items-center justify-center gap-2 transition-all hover:scale-110"
     >
-      <MapPin
-        className={`w-4 h-4 ${isCheckedIn ? "fill-blue-500" : ""}`}
-      />
-      {checkedInCount > 0 && (
-        <span className="text-xs font-medium">{checkedInCount}</span>
-      )}
-    </Button>
+      <div className="relative flex items-center justify-center">
+        {/* Fundo circular cinza claro */}
+        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+          {/* Ícone com contorno azulado (desativado) ou preenchimento vermelho (ativo) */}
+          <MapPin
+            size={20}
+            className={`transition-all ${
+              isCheckedIn
+                ? "text-red-500 fill-red-500"
+                : "text-blue-400 stroke-2"
+            }`}
+            strokeWidth={isCheckedIn ? 0 : 2}
+          />
+        </div>
+        {/* Contador de check-ins */}
+        {checkedInCount > 0 && (
+          <span className="absolute -bottom-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            {checkedInCount > 9 ? "9+" : checkedInCount}
+          </span>
+        )}
+      </div>
+    </button>
   );
 }

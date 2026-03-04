@@ -1,8 +1,6 @@
 import { Heart } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
 
 interface FavoriteButtonProps {
   eventId: string;
@@ -52,21 +50,24 @@ export function FavoriteButton({
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
+    <button
       onClick={handleToggleFavorite}
-      className={cn(
-        "rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm transition-all",
-        isFavorited ? "text-red-500" : "text-gray-400 hover:text-red-500",
-        className
-      )}
       title={isFavorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      className="flex items-center justify-center transition-all hover:scale-110"
     >
-      <Heart
-        size={iconSize[size]}
-        className={cn("transition-transform active:scale-125", isFavorited && "fill-current")}
-      />
-    </Button>
+      {/* Fundo circular cinza claro */}
+      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+        {/* Ícone com contorno azulado (desativado) ou preenchimento vermelho (ativo) */}
+        <Heart
+          size={iconSize[size]}
+          className={`transition-all ${
+            isFavorited
+              ? "text-red-500 fill-red-500"
+              : "text-blue-400 stroke-2"
+          }`}
+          strokeWidth={isFavorited ? 0 : 2}
+        />
+      </div>
+    </button>
   );
 }
