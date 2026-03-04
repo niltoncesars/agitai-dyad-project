@@ -46,12 +46,12 @@ export function EventReviews({ eventId, eventTitle, tenantId, onStatsChange }: E
   const [reviews, setReviews] = useState<Review[]>([]);
   const [userRating, setUserRating] = useState(0);
   const [userComment, setUserComment] = useState("");
-  const [userName, setUserName] = useState("");
   const [hoveredRating, setHoveredRating] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const { user, isAuthenticated } = useAuthContext();
+  const userName = user?.name || "Usuário Anônimo";
 
   // Calcular estatísticas das avaliações
   const calculateStats = (reviewsList: Review[]): ReviewStats => {
@@ -158,7 +158,6 @@ export function EventReviews({ eventId, eventTitle, tenantId, onStatsChange }: E
     onStatsChange?.(stats);
 
     // Limpar formulário
-    setUserName("");
     setUserRating(0);
     setUserComment("");
     setShowReviewForm(false);
@@ -234,14 +233,16 @@ export function EventReviews({ eventId, eventTitle, tenantId, onStatsChange }: E
           <div className="space-y-4">
             <p className="text-sm font-semibold">{eventTitle}</p>
 
-            {/* Name Input */}
-            <input
-              type="text"
-              placeholder="Seu nome"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            {/* User Name Display */}
+            <div className="flex items-center gap-2 px-1">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase">
+                {userName.substring(0, 2)}
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Avaliando como</p>
+                <p className="text-sm font-bold text-foreground">{userName}</p>
+              </div>
+            </div>
 
             {/* Rating Stars */}
             <div className="flex gap-2">
@@ -289,7 +290,6 @@ export function EventReviews({ eventId, eventTitle, tenantId, onStatsChange }: E
                 className="flex-1"
                 onClick={() => {
                   setShowReviewForm(false);
-                  setUserName("");
                   setUserRating(0);
                   setUserComment("");
                 }}
