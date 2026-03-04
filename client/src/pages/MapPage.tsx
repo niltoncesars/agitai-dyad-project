@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info, Heart, Users, Clock, MapPinIcon, Building2 } from "lucide-react";
+import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info, Heart, Users, Clock, MapPinIcon, Building2, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,7 @@ export default function MapPage() {
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showRadius, setShowRadius] = useState(true);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
+  const [activeTab, setActiveTab] = useState<"reviews" | "info">("reviews");
   
   const mapRef = useRef<any>(null);
   const markersRef = useRef<L.Marker[]>([]);
@@ -99,102 +100,95 @@ export default function MapPage() {
     // Verificar locais favoritos
     return settings.favoriteLocations.some(loc => {
       const dist = calculateDistance(loc.latitude, loc.longitude, event.latitude, event.longitude);
-      return dist <= (loc.radius || settings.upcomingEventsRadius);
+      return dist <= loc.radius;
     });
   };
 
-  const eventsInRangeCount = filteredEvents.filter(isEventInRange).length;
-  const categories = Array.from(new Set(events.map((e) => e.category)));
+  const categories = ["Música", "Tecnologia", "Esportes", "Conferência", "Festival"];
   const totalEvents = filteredEvents.length;
-  const totalRevenue = filteredEvents.reduce((sum, event) => sum + (event.price * event.tickets_sold), 0);
+  const totalRevenue = filteredEvents.reduce((sum, e) => sum + (e.price * e.tickets_sold), 0);
+  const eventsInRangeCount = filteredEvents.filter(isEventInRange).length;
 
-  const handleMapReady = (mapAdapter: any) => {
-    mapRef.current = mapAdapter;
+  const handleMapReady = (mapInstance: any) => {
+    mapRef.current = mapInstance;
     setMapLoading(false);
-    const map = mapAdapter.leafletInstance;
-    radiusLayersRef.current = L.layerGroup().addTo(map);
-    updateRadiusOnMap(map);
-    addMarkersToMap(map, filteredEvents);
   };
 
-  const updateRadiusOnMap = (map: L.Map) => {
-    if (!radiusLayersRef.current) return;
-    radiusLayersRef.current.clearLayers();
+  const updateRadiusOnMap = (map: any) => {
+    if (radiusLayersRef.current) {
+      map.removeLayer(radiusLayersRef.current);
+    }
 
     if (!showRadius || !settings?.enableUpcomingEvents) return;
 
-    // Raio principal
+    radiusLayersRef.current = L.layerGroup();
+
+    // Adicionar raio da localização principal
     if (settings.userLatitude && settings.userLongitude) {
-      const center: [number, number] = [settings.userLatitude, settings.userLongitude];
-      L.circle(center, {
-        radius: settings.upcomingEventsRadius * 1000,
+      const circle = L.circle([settings.userLatitude, settings.userLongitude], {
         color: "#3b82f6",
         fillColor: "#3b82f6",
         fillOpacity: 0.1,
-        weight: 1,
-        dashArray: "5, 5"
-      }).addTo(radiusLayersRef.current).bindPopup("Sua Localização Principal");
-
-      const userIcon = L.divIcon({
-        className: "custom-user-icon",
-        html: `<div class="w-4 h-4 bg-blue-600 border-2 border-white rounded-full shadow-lg animate-pulse"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
+        radius: settings.upcomingEventsRadius * 1000,
+        weight: 2,
       });
-      L.marker(center, { icon: userIcon }).addTo(radiusLayersRef.current);
+      circle.addTo(radiusLayersRef.current);
+
+      const marker = L.circleMarker([settings.userLatitude, settings.userLongitude], {
+        radius: 8,
+        fillColor: "#3b82f6",
+        color: "#fff",
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8,
+      });
+      marker.addTo(radiusLayersRef.current);
     }
 
-    // Raios favoritos
-    settings.favoriteLocations.forEach(loc => {
-      const center: [number, number] = [loc.latitude, loc.longitude];
-      L.circle(center, {
-        radius: (loc.radius || settings.upcomingEventsRadius) * 1000,
+    // Adicionar raios dos locais favoritos
+    settings.favoriteLocations.forEach((loc) => {
+      const circle = L.circle([loc.latitude, loc.longitude], {
         color: "#ec4899",
         fillColor: "#ec4899",
         fillOpacity: 0.1,
-        weight: 1,
-        dashArray: "5, 5"
-      }).addTo(radiusLayersRef.current).bindPopup(`Local Favorito: ${loc.name}`);
-
-      const favIcon = L.divIcon({
-        className: "custom-fav-icon",
-        html: `<div class="w-4 h-4 bg-pink-600 border-2 border-white rounded-full shadow-lg"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
+        radius: loc.radius * 1000,
+        weight: 2,
       });
-      L.marker(center, { icon: favIcon }).addTo(radiusLayersRef.current);
+      circle.addTo(radiusLayersRef.current);
+
+      const marker = L.circleMarker([loc.latitude, loc.longitude], {
+        radius: 6,
+        fillColor: "#ec4899",
+        color: "#fff",
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8,
+      });
+      marker.addTo(radiusLayersRef.current);
     });
+
+    radiusLayersRef.current.addTo(map);
   };
 
-  const addMarkersToMap = (map: L.Map, eventsToAdd: typeof events) => {
-    markersRef.current.forEach(m => m.remove());
+  const addMarkersToMap = (map: any, eventsToAdd: any[]) => {
+    markersRef.current.forEach((marker) => map.removeLayer(marker));
     markersRef.current = [];
 
     eventsToAdd.forEach((event) => {
-      if (event.latitude && event.longitude) {
-        const isInRange = isEventInRange(event);
-        const markerColor = isInRange ? "#ef4444" : "#3b82f6";
-        
-        const customIcon = L.divIcon({
-          className: "custom-event-icon",
-          html: `<div class="relative">
-            <div class="w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white" style="background-color: ${markerColor}">
-              <div class="w-2 h-2 bg-white rounded-full"></div>
-            </div>
-            ${isInRange ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-white rounded-full"></div>' : ''}
-          </div>`,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12]
-        });
+      const isInRange = isEventInRange(event);
+      const marker = L.circleMarker([event.latitude, event.longitude], {
+        radius: isInRange ? 10 : 8,
+        fillColor: isInRange ? "#ef4444" : "#3b82f6",
+        color: "#fff",
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8,
+      });
 
-        const marker = L.marker([event.latitude, event.longitude], {
-          icon: customIcon,
-          title: event.title,
-        }).addTo(map);
-
-        marker.on("click", () => setSelectedEvent(event));
-        markersRef.current.push(marker);
-      }
+      marker.bindPopup(`<strong>${event.title}</strong><br>${event.city_name}`);
+      marker.on("click", () => setSelectedEvent(event));
+      marker.addTo(map);
+      markersRef.current.push(marker);
     });
   };
 
@@ -398,11 +392,11 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* Event Details Panel */}
+        {/* Event Details Panel - Novo Layout */}
         {selectedEvent && (
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-lg animate-in slide-in-from-bottom-4 duration-300">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-              {/* Left Column: Image and Basic Info */}
+              {/* Left Column: Image and Price/Tickets Info */}
               <div className="lg:col-span-1 space-y-4">
                 <div className="relative rounded-xl overflow-hidden h-64">
                   <img src={selectedEvent.image} alt={selectedEvent.title} className="absolute inset-0 w-full h-full object-cover" />
@@ -432,80 +426,122 @@ export default function MapPage() {
                 </div>
               </div>
               
-              {/* Middle Column: Event Details */}
-              <div className="lg:col-span-1 space-y-4">
+              {/* Right Column: Description, Rating, Buttons, and Tabs */}
+              <div className="lg:col-span-2 space-y-4">
+                {/* Title and Category */}
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Badge className="bg-blue-600 hover:bg-blue-700">{selectedEvent.category}</Badge>
                     {isEventInRange(selectedEvent) && <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">Proximo</Badge>}
                   </div>
-                  <h2 className="text-2xl font-bold mb-2">{selectedEvent.title}</h2>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{selectedEvent.description}</p>
+                  <h2 className="text-2xl font-bold mb-3">{selectedEvent.title}</h2>
                 </div>
-                
-                {/* Event Details */}
-                <div className="space-y-3 bg-muted/50 rounded-lg p-4 border border-border/50">
-                  <div className="flex items-start gap-3">
-                    <Clock className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase font-semibold">Data e Horario</p>
-                      <p className="text-sm font-medium">{selectedEvent.date}</p>
-                      <p className="text-sm">{selectedEvent.time} - {selectedEvent.endTime}</p>
+
+                {/* Description */}
+                <p className="text-muted-foreground text-sm leading-relaxed">{selectedEvent.description}</p>
+
+                {/* Rating Summary */}
+                {reviewStats && (
+                  <div className="flex items-center gap-3 py-3 border-y border-border">
+                    <div className="flex items-center gap-1">
+                      <span className="text-2xl font-bold">{reviewStats.averageRating}</span>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span key={star} className={star <= Math.round(reviewStats.averageRating) ? "text-yellow-400" : "text-gray-300"}>★</span>
+                        ))}
+                      </div>
                     </div>
+                    <span className="text-sm text-muted-foreground">{formatNumber(reviewStats.totalReviews)} avaliações</span>
                   </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <MapPinIcon className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase font-semibold">Endereco</p>
-                      <p className="text-sm font-medium">{selectedEvent.address}</p>
-                    </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 h-11 rounded-lg text-base" onClick={handleBuyClick}>
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                    Comprar Ingressos
+                  </Button>
+                  <Button variant="outline" className="w-full h-11 rounded-lg text-base gap-2">
+                    <Share2 className="w-5 h-5" />
+                    Compartilhar
+                  </Button>
+                </div>
+
+                {/* Tabs */}
+                <div className="border-b border-border">
+                  <div className="flex gap-6">
+                    <button
+                      onClick={() => setActiveTab("reviews")}
+                      className={`py-3 px-1 font-medium text-sm border-b-2 transition-colors ${
+                        activeTab === "reviews"
+                          ? "border-b-red-500 text-foreground"
+                          : "border-b-transparent text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Avaliações
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("info")}
+                      className={`py-3 px-1 font-medium text-sm border-b-2 transition-colors ${
+                        activeTab === "info"
+                          ? "border-b-red-500 text-foreground"
+                          : "border-b-transparent text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Informações
+                    </button>
                   </div>
+                </div>
+
+                {/* Tab Content */}
+                <div className="max-h-[400px] overflow-y-auto">
+                  {activeTab === "reviews" && (
+                    <EventReviews 
+                      eventId={selectedEvent.id} 
+                      eventTitle={selectedEvent.title}
+                      onStatsChange={setReviewStats}
+                    />
+                  )}
                   
-                  {selectedEvent.artists && selectedEvent.artists.length > 0 && (
-                    <div className="flex items-start gap-3">
-                      <Users className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase font-semibold">Artistas</p>
-                        <p className="text-sm font-medium">{selectedEvent.artists.join(", ")}</p>
+                  {activeTab === "info" && (
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Data e Horário</p>
+                          <p className="text-sm font-medium">{selectedEvent.date}</p>
+                          <p className="text-sm text-muted-foreground">{selectedEvent.time} - {selectedEvent.endTime}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3">
+                        <MapPinIcon className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Endereço</p>
+                          <p className="text-sm font-medium">{selectedEvent.address}</p>
+                        </div>
+                      </div>
+                      
+                      {selectedEvent.artists && selectedEvent.artists.length > 0 && (
+                        <div className="flex items-start gap-3">
+                          <Users className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Artistas</p>
+                            <p className="text-sm font-medium">{selectedEvent.artists.join(", ")}</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-start gap-3">
+                        <Building2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Organizador</p>
+                          <p className="text-sm font-medium">{selectedEvent.organizer_name}</p>
+                          <p className="text-xs text-muted-foreground">CNPJ: {selectedEvent.cnpj}</p>
+                        </div>
                       </div>
                     </div>
                   )}
-                  
-                  <div className="flex items-start gap-3">
-                    <Building2 className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase font-semibold">Organizador</p>
-                      <p className="text-sm font-medium">{selectedEvent.organizer_name}</p>
-                      <p className="text-xs text-muted-foreground">CNPJ: {selectedEvent.cnpj}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex flex-col gap-2">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700 h-10 rounded-lg" onClick={handleBuyClick}>
-                    <ShoppingCart className="w-4 h-4 mr-2" />Comprar Ingressos
-                  </Button>
-                  <ShareButtons title={selectedEvent.title} text={selectedEvent.description} />
-                </div>
-              </div>
-              
-              {/* Right Column: Ratings and Reviews */}
-              <div className="lg:col-span-1 space-y-4 max-h-[600px] overflow-y-auto">
-                {reviewStats && (
-                  <EventRatingSummary 
-                    rating={reviewStats.averageRating} 
-                    totalReviews={reviewStats.totalReviews}
-                    ratingDistribution={reviewStats.ratingDistribution}
-                  />
-                )}
-                <div className="border-t border-border pt-4">
-                  <EventReviews 
-                    eventId={selectedEvent.id} 
-                    eventTitle={selectedEvent.title}
-                    onStatsChange={setReviewStats}
-                  />
                 </div>
               </div>
             </div>
