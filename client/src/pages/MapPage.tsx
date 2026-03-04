@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info, Heart } from "lucide-react";
+import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info, Heart, Users, Clock, MapPinIcon, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { MapView } from "@/components/Map";
 import { BuyTicketModal } from "@/components/BuyTicketModal";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ShareButtons } from "@/components/ShareButtons";
+import { EventRatingSummary } from "@/components/EventRatingSummary";
+import { EventReviews } from "@/components/EventReviews";
 import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -398,38 +400,101 @@ export default function MapPage() {
         {/* Event Details Panel */}
         {selectedEvent && (
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-lg animate-in slide-in-from-bottom-4 duration-300">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              <div className="h-64 md:h-full relative">
-                <img src={selectedEvent.image} alt={selectedEvent.title} className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute top-4 right-4"><FavoriteButton eventId={selectedEvent.id} /></div>
-              </div>
-              <div className="p-6 lg:col-span-2 space-y-6">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-blue-600 hover:bg-blue-700">{selectedEvent.category}</Badge>
-                      <span className="text-sm text-muted-foreground">{selectedEvent.city_name}</span>
-                      {isEventInRange(selectedEvent) && <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">Próximo a você</Badge>}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+              {/* Left Column: Image and Basic Info */}
+              <div className="lg:col-span-1 space-y-4">
+                <div className="relative rounded-xl overflow-hidden h-64">
+                  <img src={selectedEvent.image} alt={selectedEvent.title} className="absolute inset-0 w-full h-full object-cover" />
+                  <div className="absolute top-4 right-4 z-10"><FavoriteButton eventId={selectedEvent.id} /></div>
+                </div>
+                
+                {/* Event Info Cards */}
+                <div className="space-y-3">
+                  <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+                    <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Preco</p>
+                    <p className="text-2xl font-bold text-blue-600">{formatCurrency(selectedEvent.price)}</p>
+                  </div>
+                  
+                  <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+                    <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Ingressos</p>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span>Vendidos</span>
+                        <span className="font-semibold">{formatNumber(selectedEvent.tickets_sold)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Total</span>
+                        <span className="font-semibold">{formatNumber(selectedEvent.tickets_total)}</span>
+                      </div>
                     </div>
-                    <h2 className="text-2xl font-bold">{selectedEvent.title}</h2>
-                    <p className="text-muted-foreground mt-2 line-clamp-2">{selectedEvent.description}</p>
-                  </div>
-                  <div className="text-left md:text-right">
-                    <p className="text-sm text-muted-foreground mb-1">A partir de</p>
-                    <p className="text-3xl font-bold text-blue-600">{formatCurrency(selectedEvent.price)}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-xl border border-border/50">
-                  <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase font-semibold">Data</p><p className="text-sm font-medium">{selectedEvent.date}</p></div>
-                  <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase font-semibold">Horário</p><p className="text-sm font-medium">{selectedEvent.time}</p></div>
-                  <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase font-semibold">Vendas</p><p className="text-sm font-medium">{formatNumber(selectedEvent.tickets_sold)}</p></div>
-                  <div className="space-y-1"><p className="text-xs text-muted-foreground uppercase font-semibold">Receita</p><p className="text-sm font-medium">{formatCurrency(selectedEvent.price * selectedEvent.tickets_sold)}</p></div>
+              </div>
+              
+              {/* Middle Column: Event Details */}
+              <div className="lg:col-span-1 space-y-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-blue-600 hover:bg-blue-700">{selectedEvent.category}</Badge>
+                    {isEventInRange(selectedEvent) && <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">Proximo</Badge>}
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">{selectedEvent.title}</h2>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{selectedEvent.description}</p>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
-                  <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 h-12 px-8 rounded-xl" onClick={handleBuyClick}>
+                
+                {/* Event Details */}
+                <div className="space-y-3 bg-muted/50 rounded-lg p-4 border border-border/50">
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase font-semibold">Data e Horario</p>
+                      <p className="text-sm font-medium">{selectedEvent.date}</p>
+                      <p className="text-sm">{selectedEvent.time} - {selectedEvent.endTime}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <MapPinIcon className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase font-semibold">Endereco</p>
+                      <p className="text-sm font-medium">{selectedEvent.address}</p>
+                    </div>
+                  </div>
+                  
+                  {selectedEvent.artists && selectedEvent.artists.length > 0 && (
+                    <div className="flex items-start gap-3">
+                      <Users className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase font-semibold">Artistas</p>
+                        <p className="text-sm font-medium">{selectedEvent.artists.join(", ")}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-start gap-3">
+                    <Building2 className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase font-semibold">Organizador</p>
+                      <p className="text-sm font-medium">{selectedEvent.organizer_name}</p>
+                      <p className="text-xs text-muted-foreground">CNPJ: {selectedEvent.cnpj}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-2">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 h-10 rounded-lg" onClick={handleBuyClick}>
                     <ShoppingCart className="w-4 h-4 mr-2" />Comprar Ingressos
                   </Button>
-                  <div className="w-full sm:w-auto border-l border-border pl-0 sm:pl-4"><ShareButtons title={selectedEvent.title} text={selectedEvent.description} /></div>
+                  <ShareButtons title={selectedEvent.title} text={selectedEvent.description} />
+                </div>
+              </div>
+              
+              {/* Right Column: Ratings and Reviews */}
+              <div className="lg:col-span-1 space-y-4 max-h-[600px] overflow-y-auto">
+                <EventRatingSummary rating={selectedEvent.rating || 0} totalReviews={selectedEvent.rating ? Math.floor(Math.random() * 1000) + 100 : 0} />
+                <div className="border-t border-border pt-4">
+                  <EventReviews eventId={selectedEvent.id} eventTitle={selectedEvent.title} />
                 </div>
               </div>
             </div>
