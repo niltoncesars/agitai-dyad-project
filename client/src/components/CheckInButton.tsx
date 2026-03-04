@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { MapPin } from "lucide-react";
 
 interface CheckInButtonProps {
   eventId: string;
@@ -56,22 +55,12 @@ export function CheckInButton({ eventId, eventTitle }: CheckInButtonProps) {
     >
       <div className="relative flex items-center justify-center">
         {/* Fundo circular cinza claro */}
-        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden p-1">
-          {isCheckedIn ? (
-            // Ícone personalizado quando ativado - preenchendo todo o espaço disponível
-            <img
-              src="/icons/location-pin-active.png"
-              alt="Presença confirmada"
-              className="w-full h-full object-contain"
-            />
-          ) : (
-            // Ícone padrão quando desativado - com tamanho equivalente
-            <MapPin
-              size={24}
-              className="text-blue-400 stroke-2"
-              strokeWidth={2}
-            />
-          )}
+        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+          <img
+            src={isCheckedIn ? "/icons/location-pin-active.png" : "/icons/location-pin-inactive.png"}
+            alt={isCheckedIn ? "Presença confirmada" : "Confirmar presença"}
+            className="w-6 h-6 object-contain"
+          />
         </div>
         {/* Contador de check-ins */}
         {checkedInCount > 0 && (
