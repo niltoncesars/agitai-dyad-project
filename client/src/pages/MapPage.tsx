@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MapView } from "@/components/Map";
 import { BuyTicketModal } from "@/components/BuyTicketModal";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { CheckInButton } from "@/components/CheckInButton";
 import { ShareButtons } from "@/components/ShareButtons";
 import { EventRatingSummary } from "@/components/EventRatingSummary";
 import { EventReviews, ReviewStats } from "@/components/EventReviews";
@@ -370,7 +371,10 @@ export default function MapPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <h4 className={`font-medium text-sm truncate ${isInRange ? "text-blue-900" : ""}`}>{event.title}</h4>
-                            <FavoriteButton eventId={event.id} size="sm" className="h-6 w-6 bg-transparent shadow-none p-0" />
+                            <div className="flex gap-1">
+                              <CheckInButton eventId={event.id} eventTitle={event.title} />
+                              <FavoriteButton eventId={event.id} size="sm" className="h-6 w-6 bg-transparent shadow-none p-0" />
+                            </div>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="secondary" className={`rounded-full text-[10px] px-1.5 h-4 ${isInRange ? "bg-blue-200 text-blue-800" : ""}`}>
@@ -400,7 +404,10 @@ export default function MapPage() {
               <div className="lg:col-span-1 space-y-4">
                 <div className="relative rounded-xl overflow-hidden h-64">
                   <img src={selectedEvent.image} alt={selectedEvent.title} className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute top-4 right-4 z-10"><FavoriteButton eventId={selectedEvent.id} /></div>
+                  <div className="absolute top-4 right-4 z-10 flex gap-2">
+                    <CheckInButton eventId={selectedEvent.id} eventTitle={selectedEvent.title} />
+                    <FavoriteButton eventId={selectedEvent.id} />
+                  </div>
                 </div>
                 
                 {/* Event Info Cards */}
