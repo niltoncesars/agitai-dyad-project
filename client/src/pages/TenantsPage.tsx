@@ -20,6 +20,7 @@ const tenants = [
     eventsCount: 0,
     totalRevenue: 0,
     joinedAt: "2023-01-15",
+    logo: null as string | null,
   },
   {
     id: "tenant-002",
@@ -33,6 +34,7 @@ const tenants = [
     eventsCount: 0,
     totalRevenue: 0,
     joinedAt: "2023-03-22",
+    logo: null as string | null,
   },
   {
     id: "tenant-003",
@@ -46,6 +48,7 @@ const tenants = [
     eventsCount: 0,
     totalRevenue: 0,
     joinedAt: "2023-06-10",
+    logo: null as string | null,
   },
   {
     id: "tenant-004",
@@ -59,6 +62,7 @@ const tenants = [
     eventsCount: 0,
     totalRevenue: 0,
     joinedAt: "2023-08-05",
+    logo: null as string | null,
   },
   {
     id: "tenant-005",
@@ -72,6 +76,7 @@ const tenants = [
     eventsCount: 0,
     totalRevenue: 0,
     joinedAt: "2023-09-18",
+    logo: null as string | null,
   },
 ].map((tenant) => {
   const tenantEvents = events.filter((e) => e.organizer_id === tenant.id);
@@ -85,6 +90,19 @@ const tenants = [
 export default function TenantsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [tenantLogos, setTenantLogos] = useState<Record<string, string>>({});
+
+  const handleLogoUpload = (tenantId: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      setTenantLogos((prev) => ({
+        ...prev,
+        [tenantId]: base64,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const filteredTenants = tenants.filter((tenant) => {
     if (selectedStatus !== "all" && tenant.status !== selectedStatus) return false;
@@ -207,6 +225,38 @@ export default function TenantsPage() {
                 key={tenant.id}
                 className="bg-card rounded-xl border border-border p-5 hover:shadow-md transition-shadow"
               >
+                {/* Logo Upload Section */}
+                <div className="mb-4 pb-4 border-b border-border">
+                  <label className="block text-xs text-muted-foreground uppercase font-semibold mb-2">
+                    Logo / Thumbnail da Marca
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center shrink-0 border-2 border-dashed border-border overflow-hidden">
+                      {tenantLogos[tenant.id] ? (
+                        <img
+                          src={tenantLogos[tenant.id]}
+                          alt={tenant.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Building2 className="w-6 h-6 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleLogoUpload(tenant.id, file);
+                        }}
+                        className="text-xs cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG ou GIF (máx. 2MB)</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
