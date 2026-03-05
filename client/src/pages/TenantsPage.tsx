@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { events, formatCurrency } from "@/lib/mock-data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { RatingSystem } from "@/components/RatingSystem";
+import { toast } from "sonner";
 
 const tenants = [
   {
@@ -93,7 +94,46 @@ export default function TenantsPage() {
   const [tenantLogos, setTenantLogos] = useState<Record<string, string>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const handleLogoUpload = (tenantId: string, file: File) => {
+  const handleLogoUpload = (tenantId: string, file: File | null) => {
+    // Validar se arquivo foi selecionado
+    if (!file) {
+      toast.error("Nenhum arquivo foi selecionado. Por favor, escolha uma imagem.", {
+        style: {
+          background: "#ef4444",
+          color: "#ffffff",
+          border: "none",
+        },
+      });
+      return;
+    }
+
+    // Validar tipo de arquivo
+    const allowedTypes = ["image/png", "image/jpeg", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Tipo de arquivo inválido. Apenas PNG, JPG e GIF são permitidos.", {
+        style: {
+          background: "#ef4444",
+          color: "#ffffff",
+          border: "none",
+        },
+      });
+      return;
+    }
+
+    // Validar tamanho do arquivo (2MB = 2097152 bytes)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      toast.error(`Arquivo muito grande. O tamanho máximo é 2MB. Seu arquivo tem ${(file.size / 1024 / 1024).toFixed(2)}MB.`, {
+        style: {
+          background: "#ef4444",
+          color: "#ffffff",
+          border: "none",
+        },
+      });
+      return;
+    }
+
+    // Se passou em todas as validações, fazer upload
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
@@ -101,6 +141,13 @@ export default function TenantsPage() {
         ...prev,
         [tenantId]: base64,
       }));
+      toast.success("Logo do Tenant atualizada com sucesso!", {
+        style: {
+          background: "#10b981",
+          color: "#ffffff",
+          border: "none",
+        },
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -258,8 +305,8 @@ export default function TenantsPage() {
                         type="file"
                         accept="image/*"
                         onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleLogoUpload(tenant.id, file);
+                          const file = e.target.files?.[0] || null;
+                          handleLogoUpload(tenant.id, file);
                         }}
                         className="hidden"
                       />
