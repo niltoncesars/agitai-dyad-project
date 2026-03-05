@@ -11,6 +11,7 @@ import { CheckInButton } from "@/components/CheckInButton";
 import { ShareButtons } from "@/components/ShareButtons";
 import { EventRatingSummary } from "@/components/EventRatingSummary";
 import { EventReviews, ReviewStats } from "@/components/EventReviews";
+import { TenantSection } from "@/components/TenantSection";
 import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -409,6 +410,17 @@ export default function MapPage() {
                     <FavoriteButton eventId={selectedEvent.id} />
                   </div>
                 </div>
+                
+                {/* Tenant Section */}
+                <TenantSection
+                  tenantId={selectedEvent.tenant_id || "1"}
+                  tenantName={selectedEvent.organizer_name}
+                  tenantImage={selectedEvent.organizer_image || "https://via.placeholder.com/64"}
+                  rating={selectedEvent.rating || 4.7}
+                  followers={selectedEvent.followers || 709}
+                  onFollowClick={() => toast.success(`Seguindo ${selectedEvent.organizer_name}!`)}
+                  onChatClick={() => toast.info(`Abrindo chat com ${selectedEvent.organizer_name}...`)}
+                />
                 
                 {/* Event Info Cards */}
                 <div className="space-y-3">
