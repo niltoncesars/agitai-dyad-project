@@ -16,6 +16,7 @@ import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useTenantStorage } from "@/hooks/useTenantStorage";
 import L from "leaflet";
 
 const SETTINGS_KEY = "agitai_notification_settings";
@@ -68,6 +69,7 @@ export default function MapPage() {
   const radiusLayersRef = useRef<L.LayerGroup | null>(null);
   
   const { user, isAuthenticated } = useAuthContext();
+  const { getTenantLogo } = useTenantStorage();
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
 
   useEffect(() => {
@@ -415,7 +417,7 @@ export default function MapPage() {
                 <TenantSection
                   tenantId={selectedEvent.tenant_id || "1"}
                   tenantName={selectedEvent.organizer_name}
-                  tenantImage={selectedEvent.organizer_image || "https://via.placeholder.com/64"}
+                  tenantImage={getTenantLogo(selectedEvent.tenant_id || "1") || selectedEvent.organizer_image || "https://via.placeholder.com/64"}
                   rating={selectedEvent.rating || 4.7}
                   followers={selectedEvent.followers || 709}
                   onFollowClick={() => toast.success(`Seguindo ${selectedEvent.organizer_name}!`)}
