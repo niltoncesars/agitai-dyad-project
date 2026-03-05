@@ -63,6 +63,7 @@ export default function MapPage() {
   const [showRadius, setShowRadius] = useState(true);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [activeTab, setActiveTab] = useState<"reviews" | "info">("info");
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number; cityName: string } | null>(null);
   
   const mapRef = useRef<any>(null);
   const markersRef = useRef<L.Marker[]>([]);
@@ -71,6 +72,44 @@ export default function MapPage() {
   const { user, isAuthenticated } = useAuthContext();
   const { getTenantLogo } = useTenantStorage();
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
+
+  // Geolocalização do usuário
+  useEffect(() => {
+    const getGeoLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            
+            // Encontrar a cidade mais próxima
+            let nearestCity = cities[0];
+            let minDistance = Infinity;
+            
+            cities.forEach((city) => {
+              const distance = calculateDistance(latitude, longitude, city.latitude, city.longitude);
+              if (distance < minDistance) {
+                minDistance = distance;
+                nearestCity = city;
+              }
+            });
+            
+            setUserLocation({
+              latitude,
+              longitude,
+              cityName: nearestCity.name
+            });
+          },
+          (error) => {
+            console.log("Geolocalização não permitida ou indisponível");
+            // Fallback para uma localização padrão para demonstração se necessário
+            // Ou apenas manter null
+          }
+        );
+      }
+    };
+
+    getGeoLocation();
+  }, [cities]);
 
   useEffect(() => {
     try {
@@ -86,7 +125,11 @@ export default function MapPage() {
   }, []);
 
   const filteredEvents = events.filter((event) => {
-    if (selectedCity !== "all" && event.city_id !== selectedCity) return false;
+    if (selectedCity !== "all" && selectedCity !== "current" && event.city_id !== selectedCity) return false;
+    if (selectedCity === "current" && userLocation) {
+      const distance = calculateDistance(userLocation.latitude, userLocation.longitude, event.latitude, event.longitude);
+      if (distance > 50) return false;
+    }
     if (selectedCategory !== "all" && event.category !== selectedCategory) return false;
     if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
@@ -275,6 +318,7 @@ export default function MapPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as cidades</SelectItem>
+                <SelectItem value="current">📍 Localização Atual {userLocation ? `(${userLocation.cityName})` : ""}</SelectItem>
                 {cities.map((city) => <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>)}
               </SelectContent>
             </Select>
