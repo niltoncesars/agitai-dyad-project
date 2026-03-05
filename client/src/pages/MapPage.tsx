@@ -62,7 +62,7 @@ export default function MapPage() {
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showRadius, setShowRadius] = useState(true);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
-  const [activeTab, setActiveTab] = useState<"reviews" | "info">("reviews");
+  const [activeTab, setActiveTab] = useState<"reviews" | "info">("info");
   
   const mapRef = useRef<any>(null);
   const markersRef = useRef<L.Marker[]>([]);
@@ -504,16 +504,6 @@ export default function MapPage() {
                 <div className="border-b border-border">
                   <div className="flex w-full">
                     <button
-                      onClick={() => setActiveTab("reviews")}
-                      className={`flex-1 py-3 px-1 font-medium text-sm border-b-2 transition-colors text-center ${
-                        activeTab === "reviews"
-                          ? "border-b-red-500 text-foreground"
-                          : "border-b-transparent text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Avaliações
-                    </button>
-                    <button
                       onClick={() => setActiveTab("info")}
                       className={`flex-1 py-3 px-1 font-medium text-sm border-b-2 transition-colors text-center ${
                         activeTab === "info"
@@ -522,6 +512,16 @@ export default function MapPage() {
                       }`}
                     >
                       Informações
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("reviews")}
+                      className={`flex-1 py-3 px-1 font-medium text-sm border-b-2 transition-colors text-center ${
+                        activeTab === "reviews"
+                          ? "border-b-red-500 text-foreground"
+                          : "border-b-transparent text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Avaliações
                     </button>
                   </div>
                 </div>
