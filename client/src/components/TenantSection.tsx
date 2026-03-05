@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { MessageCircle, ChevronRight } from "lucide-react";
+import { useState, useMemo } from "react";
+import { MessageCircle, ChevronRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTenantStorage } from "@/hooks/useTenantStorage";
 
 interface TenantSectionProps {
   tenantId: string;
@@ -24,6 +25,13 @@ export function TenantSection({
   onChatClick,
 }: TenantSectionProps) {
   const [localIsFollowing, setLocalIsFollowing] = useState(isFollowing);
+  const { getTenantLogo } = useTenantStorage();
+  
+  // Usar logo persistida se disponível, caso contrário usar a fornecida
+  const displayImage = useMemo(() => {
+    const persistedLogo = getTenantLogo(tenantId);
+    return persistedLogo || tenantImage;
+  }, [tenantId, tenantImage, getTenantLogo]);
 
   const handleFollowClick = () => {
     setLocalIsFollowing(!localIsFollowing);
@@ -36,11 +44,17 @@ export function TenantSection({
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {/* Tenant Logo */}
         <div className="flex-shrink-0">
-          <img
-            src={tenantImage}
-            alt={tenantName}
-            className="w-14 h-14 rounded-full object-cover border-2 border-white/20 shadow-sm"
-          />
+          {displayImage ? (
+            <img
+              src={displayImage}
+              alt={tenantName}
+              className="w-14 h-14 rounded-full object-cover border-2 border-white/20 shadow-sm"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-white/50" />
+            </div>
+          )}
         </div>
 
         {/* Tenant Info */}

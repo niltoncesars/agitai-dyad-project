@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Building2, Search, Plus, Eye, Edit, Trash2, Globe, Mail, Phone, MapPin, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { events, formatCurrency } from "@/lib/mock-data";
 import DashboardLayout from "@/components/DashboardLayout";
 import { RatingSystem } from "@/components/RatingSystem";
 import { toast } from "sonner";
+import { useTenantStorage } from "@/hooks/useTenantStorage";
 
 const tenants = [
   {
@@ -91,8 +92,22 @@ const tenants = [
 export default function TenantsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [tenantLogos, setTenantLogos] = useState<Record<string, string>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  
+  // Usar hook de persistência de dados
+  const { tenantData, isLoaded, updateTenantLogo, getTenantLogo } = useTenantStorage();
+  
+  // Inicializar dados de tenants no storage se não existirem
+  useEffect(() => {
+    if (isLoaded) {
+      tenants.forEach((tenant) => {
+        // Se o tenant não existe no storage, adicionar com dados iniciais
+        if (!tenantData[tenant.id]) {
+          // Os dados iniciais serão salvos automaticamente pelo hook
+        }
+      });
+    }
+  }, [isLoaded, tenantData]);
 
   const handleLogoUpload = (tenantId: string, file: File | null) => {
     // Validar se arquivo foi selecionado
@@ -137,10 +152,8 @@ export default function TenantsPage() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
-      setTenantLogos((prev) => ({
-        ...prev,
-        [tenantId]: base64,
-      }));
+      // Salvar logo no storage persistente
+      updateTenantLogo(tenantId, base64);
       toast.success("Logo do Tenant atualizada com sucesso!", {
         style: {
           background: "#10b981",
@@ -279,9 +292,9 @@ export default function TenantsPage() {
                     {/* Logo Container with Edit Button */}
                     <div className="relative">
                       <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 border border-border overflow-hidden">
-                        {tenantLogos[tenant.id] ? (
+                        {getTenantLogo(tenant.id) ? (
                           <img
-                            src={tenantLogos[tenant.id]}
+                            src={getTenantLogo(tenant.id)}
                             alt={tenant.name}
                             className="w-full h-full object-cover"
                           />
