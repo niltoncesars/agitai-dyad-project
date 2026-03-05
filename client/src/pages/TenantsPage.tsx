@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Building2, Search, Plus, Eye, Edit, Trash2, Globe, Mail, Phone, MapPin } from "lucide-react";
+import { useState, useRef } from "react";
+import { Building2, Search, Plus, Eye, Edit, Trash2, Globe, Mail, Phone, MapPin, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,6 +91,7 @@ export default function TenantsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [tenantLogos, setTenantLogos] = useState<Record<string, string>>({});
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const handleLogoUpload = (tenantId: string, file: File) => {
     const reader = new FileReader();
@@ -223,55 +224,58 @@ export default function TenantsPage() {
             filteredTenants.map((tenant) => (
               <div
                 key={tenant.id}
-                className="bg-card rounded-xl border border-border p-5 hover:shadow-md transition-shadow"
+                className="bg-card rounded-xl border border-border p-6 hover:shadow-md transition-shadow"
               >
-                {/* Logo Upload Section */}
-                <div className="mb-4 pb-4 border-b border-border">
-                  <label className="block text-xs text-muted-foreground uppercase font-semibold mb-2">
-                    Logo / Thumbnail da Marca
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center shrink-0 border-2 border-dashed border-border overflow-hidden">
-                      {tenantLogos[tenant.id] ? (
-                        <img
-                          src={tenantLogos[tenant.id]}
-                          alt={tenant.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Building2 className="w-6 h-6 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex-1">
+                {/* Header with Logo and Edit Button */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start gap-3 flex-1">
+                    {/* Logo Container with Edit Button */}
+                    <div className="relative">
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 border border-border overflow-hidden">
+                        {tenantLogos[tenant.id] ? (
+                          <img
+                            src={tenantLogos[tenant.id]}
+                            alt={tenant.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Building2 className="w-8 h-8 text-gray-400" />
+                        )}
+                      </div>
+                      {/* Edit Button (Pencil) */}
+                      <button
+                        onClick={() => fileInputRefs.current[tenant.id]?.click()}
+                        className="absolute -top-1 -right-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-1.5 shadow-md transition-colors"
+                        title="Editar logo"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      {/* Hidden File Input */}
                       <input
+                        ref={(ref) => {
+                          if (ref) fileInputRefs.current[tenant.id] = ref;
+                        }}
                         type="file"
                         accept="image/*"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) handleLogoUpload(tenant.id, file);
                         }}
-                        className="text-xs cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        className="hidden"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">PNG, JPG ou GIF (máx. 2MB)</p>
                     </div>
-                  </div>
-                </div>
 
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                      <Building2 className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-sm">{tenant.name}</h3>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full border font-medium ${getPlanColor(tenant.plan)}`}
-                      >
+                    {/* Name and Plan */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base text-foreground">{tenant.name}</h3>
+                      <Badge className={`text-xs px-2 py-0.5 rounded-full border font-medium mt-1 w-fit ${getPlanColor(tenant.plan)}`}>
                         {tenant.plan}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
+
+                  {/* Status Indicator */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <div
                       className={`w-2 h-2 rounded-full ${tenant.status === "active" ? "bg-green-500" : "bg-gray-400"}`}
                     />
@@ -281,41 +285,53 @@ export default function TenantsPage() {
                   </div>
                 </div>
 
+                {/* Contact Information */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="w-3.5 h-3.5 shrink-0" />
+                    <Mail className="w-4 h-4 shrink-0" />
                     <span className="truncate">{tenant.email}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="w-3.5 h-3.5 shrink-0" />
+                    <Phone className="w-4 h-4 shrink-0" />
                     <span>{tenant.phone}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="w-3.5 h-3.5 shrink-0" />
+                    <MapPin className="w-4 h-4 shrink-0" />
                     <span>{tenant.city}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Globe className="w-3.5 h-3.5 shrink-0" />
+                    <Globe className="w-4 h-4 shrink-0" />
                     <span className="truncate">{tenant.website}</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border mb-4">
+                {/* Stats and Rating */}
+                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-border">
                   <div>
-                    <p className="text-xs text-muted-foreground">Eventos</p>
-                    <p className="text-lg font-bold">{tenant.eventsCount}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-semibold">Eventos</p>
+                    <p className="text-2xl font-bold mt-1">{tenant.eventsCount}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Receita</p>
-                    <p className="text-sm font-bold text-blue-600">{formatCurrency(tenant.totalRevenue)}</p>
+                    <p className="text-xs text-muted-foreground uppercase font-semibold">Receita</p>
+                    <p className="text-sm font-bold text-blue-600 mt-1">{formatCurrency(tenant.totalRevenue)}</p>
                   </div>
                 </div>
 
-                <div className="mb-4 pb-4 border-b border-border">
-                  <RatingSystem tenantId={tenant.id} tenantName={tenant.name} />
+                {/* Rating */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-yellow-400 text-lg">★</span>
+                    <span className="font-semibold text-sm">4.5</span>
+                    <span className="text-xs text-muted-foreground">(2 avaliações)</span>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-xs font-semibold gap-1">
+                    Avaliar
+                    <span className="text-muted-foreground">2</span>
+                  </Button>
                 </div>
 
-                <div className="flex gap-2 mt-4">
+                {/* Action Buttons */}
+                <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1 gap-1 rounded-lg">
                     <Eye className="w-3.5 h-3.5" />
                     Ver
