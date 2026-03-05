@@ -25,6 +25,7 @@ export function TenantSection({
   onChatClick,
 }: TenantSectionProps) {
   const [localIsFollowing, setLocalIsFollowing] = useState(isFollowing);
+  const [imageError, setImageError] = useState(false);
   const { getTenantLogo } = useTenantStorage();
   
   // Usar logo persistida se disponível, caso contrário usar a fornecida
@@ -32,6 +33,10 @@ export function TenantSection({
     const persistedLogo = getTenantLogo(tenantId);
     return persistedLogo || tenantImage;
   }, [tenantId, tenantImage, getTenantLogo]);
+  
+  const handleImageError = () => {
+    setImageError(true);
+  };
 
   const handleFollowClick = () => {
     setLocalIsFollowing(!localIsFollowing);
@@ -43,25 +48,28 @@ export function TenantSection({
       {/* Left Section: Logo, Name, Rating, Followers */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {/* Tenant Logo */}
-        <div className="flex-shrink-0">
-          {displayImage ? (
-            <img
-              src={displayImage}
-              alt={tenantName}
-              className="w-14 h-14 rounded-full object-cover border-2 border-white/20 shadow-sm"
-            />
-          ) : (
-            <div className="w-14 h-14 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center">
+        <div className="flex-shrink-0 w-14 h-14 relative">
+          <div className="w-full h-full rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center overflow-hidden shadow-sm">
+            {displayImage && !imageError ? (
+              <img
+                src={displayImage}
+                alt={tenantName}
+                onError={handleImageError}
+                className="w-full h-full object-cover"
+              />
+            ) : (
               <Building2 className="w-6 h-6 text-white/50" />
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Tenant Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <h3 className="text-lg font-medium text-white truncate">{tenantName}</h3>
-            <ChevronRight className="w-5 h-5 text-white/70 flex-shrink-0" />
+        <div className="flex-1 min-w-0 py-1">
+          <div className="flex items-center gap-1">
+            <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
+              {tenantName}
+            </h3>
+            <ChevronRight className="w-4 h-4 text-white/70 flex-shrink-0" />
           </div>
           <div className="flex items-center gap-2 mt-0.5">
             <div className="flex items-center gap-1">

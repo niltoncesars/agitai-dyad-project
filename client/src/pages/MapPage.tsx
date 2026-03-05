@@ -415,9 +415,9 @@ export default function MapPage() {
                 
                 {/* Tenant Section */}
                 <TenantSection
-                  tenantId={selectedEvent.tenant_id || "1"}
+                  tenantId={selectedEvent.organizer_id || "tenant-001"}
                   tenantName={selectedEvent.organizer_name}
-                  tenantImage={getTenantLogo(selectedEvent.tenant_id || "1") || selectedEvent.organizer_image || "https://via.placeholder.com/64"}
+                  tenantImage={getTenantLogo(selectedEvent.organizer_id || "tenant-001") || selectedEvent.organizer_image || "https://via.placeholder.com/64"}
                   rating={selectedEvent.rating || 4.7}
                   followers={selectedEvent.followers || 709}
                   onFollowClick={() => toast.success(`Seguindo ${selectedEvent.organizer_name}!`)}
