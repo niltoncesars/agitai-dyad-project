@@ -420,7 +420,19 @@ export default function MapPage() {
                   tenantImage={getTenantLogo(selectedEvent.organizer_id || "tenant-001") || selectedEvent.organizer_image || "https://via.placeholder.com/64"}
                   rating={selectedEvent.rating || 4.7}
                   followers={selectedEvent.followers || 709}
-                  onFollowClick={() => toast.success(`Seguindo ${selectedEvent.organizer_name}!`)}
+                  onFollowClick={(isNowFollowing) => {
+                    if (isNowFollowing) {
+                      toast.success(`Seguindo ${selectedEvent.organizer_name}!`);
+                    } else {
+                      toast.error(`Deixando de seguir ${selectedEvent.organizer_name}`, {
+                        style: {
+                          background: "#f97316",
+                          color: "#ffffff",
+                          border: "none",
+                        },
+                      });
+                    }
+                  }}
                   onChatClick={() => toast.info(`Abrindo chat com ${selectedEvent.organizer_name}...`)}
                 />
                 

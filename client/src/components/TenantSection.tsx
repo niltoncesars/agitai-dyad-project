@@ -10,7 +10,7 @@ interface TenantSectionProps {
   rating: number;
   followers: number;
   isFollowing?: boolean;
-  onFollowClick?: () => void;
+  onFollowClick?: (isNowFollowing: boolean) => void;
   onChatClick?: () => void;
 }
 
@@ -39,8 +39,9 @@ export function TenantSection({
   };
 
   const handleFollowClick = () => {
-    setLocalIsFollowing(!localIsFollowing);
-    onFollowClick?.();
+    const newFollowingState = !localIsFollowing;
+    setLocalIsFollowing(newFollowingState);
+    onFollowClick?.(newFollowingState);
   };
 
   return (
@@ -92,7 +93,7 @@ export function TenantSection({
           className="h-9 px-4 rounded-lg border border-white text-white bg-transparent hover:bg-white/10 gap-1.5 font-medium transition-colors"
           onClick={handleFollowClick}
         >
-          <span className="text-lg leading-none">+</span>
+          {!localIsFollowing && <span className="text-lg leading-none">+</span>}
           <span>{localIsFollowing ? "Seguindo" : "Seguir"}</span>
         </Button>
         <Button
