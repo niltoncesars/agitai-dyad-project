@@ -1,5 +1,3 @@
-// Mock data for EventMap platform
-
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -11,7 +9,6 @@ export const formatNumber = (value: number): string => {
   return new Intl.NumberFormat("pt-BR").format(value);
 };
 
-// Cities data
 export const cities = [
   { id: "1", name: "São Paulo", state: "SP", country: "Brasil", timezone: "America/Sao_Paulo", latitude: -23.5505, longitude: -46.6333 },
   { id: "2", name: "Rio de Janeiro", state: "RJ", country: "Brasil", timezone: "America/Sao_Paulo", latitude: -22.9068, longitude: -43.1729 },
@@ -25,7 +22,6 @@ export const cities = [
   { id: "10", name: "Manaus", state: "AM", country: "Brasil", timezone: "America/Sao_Paulo", latitude: -3.1190, longitude: -60.0217 },
 ];
 
-// Events data
 export const events = [
   {
     id: "evt-001",
@@ -45,7 +41,7 @@ export const events = [
     tickets_sold: 285000,
     status: "published",
     rating: 4.8,
-    image: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&h=300&fit=crop",
+    image: "/images/evt-001.jpg",
     organizer_name: "Cultura Viva",
     organizer_id: "tenant-001",
     artists: ["The Weeknd", "Dua Lipa", "Anitta", "Pabllo Vittar"],
@@ -69,7 +65,7 @@ export const events = [
     tickets_sold: 98000,
     status: "published",
     rating: 4.6,
-    image: "https://images.unsplash.com/photo-1540030405738-28bb1a4b1593?w=400&h=300&fit=crop",
+    image: "/images/evt-002.jpg",
     organizer_name: "EventPro Brasil",
     organizer_id: "tenant-002",
     artists: ["Carl Cox", "Richie Hawtin", "Charlotte de Witte"],
@@ -93,7 +89,7 @@ export const events = [
     tickets_sold: 4200,
     status: "published",
     rating: 4.9,
-    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop",
+    image: "/images/evt-003.jpg",
     organizer_name: "TechEvents Inc",
     organizer_id: "tenant-003",
     artists: ["Palestrantes de Tecnologia"],
@@ -117,7 +113,7 @@ export const events = [
     tickets_sold: 1800,
     status: "published",
     rating: 4.7,
-    image: "https://images.unsplash.com/photo-1555939600-2539ebd190fd?w=400&h=300&fit=crop",
+    image: "/images/evt-004.jpg",
     organizer_name: "FestivalHub",
     organizer_id: "tenant-004",
     artists: ["Chefs Baianos"],
@@ -141,7 +137,7 @@ export const events = [
     tickets_sold: 50000,
     status: "sold_out",
     rating: 4.9,
-    image: "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=400&h=300&fit=crop",
+    image: "/images/evt-005.jpg",
     organizer_name: "ShowTime Corp",
     organizer_id: "tenant-005",
     artists: ["Atletas Profissionais"],
@@ -165,7 +161,7 @@ export const events = [
     tickets_sold: 6500,
     status: "published",
     rating: 4.5,
-    image: "https://images.unsplash.com/photo-1531243269054-5ebf6c240707?w=400&h=300&fit=crop",
+    image: "/images/evt-006.jpg",
     organizer_name: "MusicLive SA",
     organizer_id: "tenant-006",
     artists: ["Artistas Contemporâneos"],
@@ -189,7 +185,7 @@ export const events = [
     tickets_sold: 1200,
     status: "draft",
     rating: 0,
-    image: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=400&h=300&fit=crop",
+    image: "/images/evt-007.jpg",
     organizer_name: "Cultura Viva",
     organizer_id: "tenant-001",
     artists: ["Palestrantes de Negócios"],
@@ -213,7 +209,7 @@ export const events = [
     tickets_sold: 0,
     status: "cancelled",
     rating: 0,
-    image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&h=300&fit=crop",
+    image: "/images/evt-008.jpg",
     organizer_name: "EventPro Brasil",
     organizer_id: "tenant-002",
     artists: ["Cineastas"],
@@ -236,7 +232,7 @@ export const events = [
     tickets_sold: 3200,
     status: "published",
     rating: 4.4,
-    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=300&fit=crop",
+    image: "/images/evt-009.jpg",
     organizer_name: "TechEvents Inc",
     organizer_id: "tenant-003",
   },
@@ -257,13 +253,12 @@ export const events = [
     tickets_sold: 75000,
     status: "published",
     rating: 4.7,
-    image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=300&fit=crop",
+    image: "/images/evt-010.jpg",
     organizer_name: "FestivalHub",
     organizer_id: "tenant-004",
   },
 ];
 
-// Tenants data
 export const tenants = [
   {
     id: "tenant-001",
@@ -293,192 +288,36 @@ export const tenants = [
     events_count: 15,
     organizers_count: 5,
     revenue: 280000,
-    created_at: "2023-06-10T09:15:00Z",
+    created_at: "2023-05-10T09:00:00Z",
   },
   {
     id: "tenant-004",
     corporate_name: "FestivalHub",
     plan_type: "pro",
-    billing_status: "active",
-    events_count: 32,
-    organizers_count: 10,
-    revenue: 520000,
-    created_at: "2023-02-05T16:45:00Z",
+    billing_status: "overdue",
+    events_count: 12,
+    organizers_count: 3,
+    revenue: 150000,
+    created_at: "2023-06-01T18:00:00Z",
   },
   {
     id: "tenant-005",
     corporate_name: "ShowTime Corp",
-    plan_type: "enterprise",
-    billing_status: "overdue",
-    events_count: 52,
-    organizers_count: 15,
-    revenue: 890000,
-    created_at: "2022-11-20T11:00:00Z",
+    plan_type: "basic",
+    billing_status: "active",
+    events_count: 8,
+    organizers_count: 2,
+    revenue: 95000,
+    created_at: "2023-07-20T11:45:00Z",
   },
   {
     id: "tenant-006",
     corporate_name: "MusicLive SA",
-    plan_type: "free",
-    billing_status: "active",
-    events_count: 8,
-    organizers_count: 2,
-    revenue: 45000,
-    created_at: "2023-09-12T13:30:00Z",
+    plan_type: "pro",
+    billing_status: "canceled",
+    events_count: 22,
+    organizers_count: 6,
+    revenue: 320000,
+    created_at: "2023-08-15T16:00:00Z",
   },
 ];
-
-// Tickets data
-export const tickets = [
-  {
-    id: "tkt-001",
-    event_id: "evt-001",
-    event_title: "Lollapalooza Brasil 2024",
-    buyer_name: "João Silva",
-    buyer_email: "joao.silva@email.com",
-    quantity: 2,
-    total_price: 1600,
-    status: "confirmed",
-    purchased_at: "2024-01-15T14:30:00Z",
-  },
-  {
-    id: "tkt-002",
-    event_id: "evt-001",
-    event_title: "Lollapalooza Brasil 2024",
-    buyer_name: "Maria Santos",
-    buyer_email: "maria.santos@email.com",
-    quantity: 1,
-    total_price: 800,
-    status: "confirmed",
-    purchased_at: "2024-01-16T10:15:00Z",
-  },
-  {
-    id: "tkt-003",
-    event_id: "evt-002",
-    event_title: "Rio Summer Festival",
-    buyer_name: "Pedro Costa",
-    buyer_email: "pedro.costa@email.com",
-    quantity: 3,
-    total_price: 1350,
-    status: "pending",
-    purchased_at: "2024-01-17T09:45:00Z",
-  },
-  {
-    id: "tkt-004",
-    event_id: "evt-003",
-    event_title: "BH Tech Summit 2024",
-    buyer_name: "Ana Oliveira",
-    buyer_email: "ana.oliveira@email.com",
-    quantity: 1,
-    total_price: 299,
-    status: "confirmed",
-    purchased_at: "2024-01-18T16:20:00Z",
-  },
-  {
-    id: "tkt-005",
-    event_id: "evt-004",
-    event_title: "Festival de Gastronomia de Salvador",
-    buyer_name: "Carlos Ferreira",
-    buyer_email: "carlos.ferreira@email.com",
-    quantity: 2,
-    total_price: 300,
-    status: "refunded",
-    purchased_at: "2024-01-19T11:10:00Z",
-  },
-  {
-    id: "tkt-006",
-    event_id: "evt-005",
-    event_title: "Maratona de São Paulo",
-    buyer_name: "Lucia Mendes",
-    buyer_email: "lucia.mendes@email.com",
-    quantity: 1,
-    total_price: 120,
-    status: "confirmed",
-    purchased_at: "2024-01-20T08:30:00Z",
-  },
-  {
-    id: "tkt-007",
-    event_id: "evt-006",
-    event_title: "Expo Arte Contemporânea",
-    buyer_name: "Roberto Almeida",
-    buyer_email: "roberto.almeida@email.com",
-    quantity: 4,
-    total_price: 320,
-    status: "cancelled",
-    purchased_at: "2024-01-21T14:45:00Z",
-  },
-  {
-    id: "tkt-008",
-    event_id: "evt-007",
-    event_title: "Fórum de Negócios Sustentáveis",
-    buyer_name: "Fernanda Lima",
-    buyer_email: "fernanda.lima@email.com",
-    quantity: 1,
-    total_price: 599,
-    status: "pending",
-    purchased_at: "2024-01-22T10:00:00Z",
-  },
-];
-
-// Revenue by month data
-export const revenueByMonth = [
-  { month: "Jan", revenue: 850000, tickets: 12500 },
-  { month: "Fev", revenue: 920000, tickets: 14200 },
-  { month: "Mar", revenue: 1100000, tickets: 16800 },
-  { month: "Abr", revenue: 1050000, tickets: 15900 },
-  { month: "Mai", revenue: 1250000, tickets: 18900 },
-  { month: "Jun", revenue: 1320000, tickets: 20100 },
-  { month: "Jul", revenue: 1450000, tickets: 22100 },
-  { month: "Ago", revenue: 1380000, tickets: 21000 },
-  { month: "Set", revenue: 1520000, tickets: 23200 },
-  { month: "Out", revenue: 1650000, tickets: 25100 },
-  { month: "Nov", revenue: 1780000, tickets: 27100 },
-  { month: "Dez", revenue: 2100000, tickets: 32000 },
-];
-
-// Events by category data
-export const eventsByCategory = [
-  { category: "Música", count: 35, revenue: 5200000 },
-  { category: "Tecnologia", count: 18, revenue: 2100000 },
-  { category: "Gastronomia", count: 12, revenue: 850000 },
-  { category: "Esportes", count: 22, revenue: 1800000 },
-  { category: "Arte & Cultura", count: 28, revenue: 2400000 },
-  { category: "Negócios", count: 15, revenue: 3200000 },
-  { category: "Educação", count: 10, revenue: 650000 },
-  { category: "Festival", count: 8, revenue: 1200000 },
-];
-
-// Users by city data
-export const usersByCity = [
-  { city: "São Paulo", users: 450000, active: 320000 },
-  { city: "Rio de Janeiro", users: 320000, active: 230000 },
-  { city: "Belo Horizonte", users: 180000, active: 130000 },
-  { city: "Salvador", users: 150000, active: 105000 },
-  { city: "Curitiba", users: 120000, active: 85000 },
-  { city: "Porto Alegre", users: 110000, active: 78000 },
-  { city: "Brasília", users: 95000, active: 67000 },
-  { city: "Recife", users: 85000, active: 60000 },
-  { city: "Fortaleza", users: 80000, active: 56000 },
-  { city: "Manaus", users: 60000, active: 42000 },
-];
-
-// Plan distribution data
-export const planDistribution = [
-  { plan: "Free", tenants: 156, percentage: 62 },
-  { plan: "Pro", tenants: 72, percentage: 29 },
-  { plan: "Enterprise", tenants: 22, percentage: 9 },
-];
-
-// Services data for infrastructure page
-export const services = [
-  { name: "API Gateway", status: "healthy", latency: 12, uptime: 99.97, requests_per_sec: 45000 },
-  { name: "Auth Service", status: "healthy", latency: 28, uptime: 99.98, requests_per_sec: 12000 },
-  { name: "Event Service", status: "healthy", latency: 45, uptime: 99.96, requests_per_sec: 18500 },
-  { name: "Ticket Service", status: "healthy", latency: 52, uptime: 99.95, requests_per_sec: 22000 },
-  { name: "Payment Service", status: "healthy", latency: 85, uptime: 99.99, requests_per_sec: 8500 },
-  { name: "Notification Service", status: "degraded", latency: 120, uptime: 99.85, requests_per_sec: 15000 },
-  { name: "Analytics Service", status: "healthy", latency: 65, uptime: 99.97, requests_per_sec: 6000 },
-  { name: "User Service", status: "healthy", latency: 38, uptime: 99.98, requests_per_sec: 14000 },
-];
-
-// Google Maps API key
-export const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY_HERE";
