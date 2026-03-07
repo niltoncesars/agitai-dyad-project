@@ -88,16 +88,14 @@ export default function FavoritesPage() {
                       alt={event.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute top-2 right-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleRemoveFavorite(event.id, e)}
-                        className="rounded-full bg-white/80 backdrop-blur-sm hover:bg-white text-red-500 shadow-sm"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleRemoveFavorite(event.id, e)}
+                      className="absolute top-2 right-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white text-red-500 shadow-sm"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                     <div className="absolute bottom-2 left-2">
                       <Badge className="bg-blue-600/90 backdrop-blur-sm border-none">
                         {event.category}
@@ -107,28 +105,27 @@ export default function FavoritesPage() {
                   
                   <div className="p-4 flex-1 flex flex-col justify-between">
                     <div>
-                      <h3 className="font-bold text-lg line-clamp-1 group-hover:text-blue-600 transition-colors">
+                      <h3 className="font-bold text-lg line-clamp-1 text-blue-600">
                         {event.title}
                       </h3>
-                      <div className="flex flex-col gap-1 mt-2">
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5 mr-2" />
-                          {event.date}
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <MapPin className="h-3.5 w-3.5 mr-2" />
-                          {event.city_name}
-                        </div>
+                      <div className="flex items-center text-sm text-muted-foreground mt-1">
+                        <Calendar className="h-3.5 w-3.5 mr-2 text-red-500" />
+                        {event.date}
                       </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {event.city_name} - {event.address.split(',')[0]}
+                      </p>
                     </div>
                     
                     <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
                       <p className="font-bold text-blue-600">
                         {event.price === 0 ? "Gratuito" : formatCurrency(event.price)}
                       </p>
-                      <Button variant="ghost" size="sm" className="text-xs h-8 group-hover:bg-blue-50 group-hover:text-blue-600">
-                        Ver no Mapa
-                      </Button>
+                      <Link href={`/map?event=${event.id}`}>
+                        <Button variant="outline" size="sm" className="text-xs h-8 border-blue-600 text-blue-600 hover:bg-blue-50">
+                          Ver no Mapa
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>
