@@ -535,7 +535,7 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
               onClick={handleFormSubmit}
               className="flex-1 bg-[#5b2ef7] text-white font-bold py-3.5 rounded-[12px] hover:bg-indigo-700 transition-all shadow-[0_4px_20px_rgba(91,46,247,0.25)]"
             >
-              {editingEvent ? "Atualizar Evento" : "Criar Evento"}
+              {editingEvent ? "Atualizar Evento" : "Publicar Evento"}
             </button>
           </div>
         </div>
