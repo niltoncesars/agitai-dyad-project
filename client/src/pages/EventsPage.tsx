@@ -37,20 +37,25 @@ export default function EventsPage() {
     // Determinar o status baseado no isDraft
     const status = eventData.isDraft ? "draft" : "published";
     
+    // Encontrar a cidade correspondente ao nome fornecido
+    const selectedCityObj = cities.find(c => c.name === eventData.city) || cities[0];
+    
     // Criar novo evento
     const newEvent = {
       id: (events.length + localEvents.length + 1).toString(),
       title: eventData.title || "Novo Evento",
       organizer_name: eventData.organizer || "Organizador",
       category: eventData.category || "Outro",
-      city_id: "1", // Mock city id
-      city_name: eventData.city || "São Paulo",
+      city_id: selectedCityObj.id,
+      city_name: selectedCityObj.name,
       date: eventData.date || new Date().toISOString(),
       price: eventData.lotes && eventData.lotes.length > 0 ? parseFloat(eventData.lotes[0].price) || 0 : 0,
       tickets_sold: 0,
       tickets_total: eventData.lotes && eventData.lotes.length > 0 ? parseInt(eventData.lotes[0].quantity) || 1000 : 1000,
       status: status,
-      image: eventData.coverImage || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=60"
+      image: eventData.coverImage || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=60",
+      latitude: selectedCityObj.latitude,
+      longitude: selectedCityObj.longitude
     };
     
     // Se está editando um evento existente, atualizar o evento local
