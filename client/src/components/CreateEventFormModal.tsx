@@ -523,12 +523,20 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
 
         {/* Footer */}
         <div className="p-6 sticky bottom-0 bg-[#f4f2ff] z-10 rounded-b-[24px] border-t border-indigo-100">
-          <button 
-            onClick={handleFormSubmit}
-            className="w-full bg-[#5b2ef7] text-white font-bold py-3.5 rounded-[12px] hover:bg-indigo-700 transition-all shadow-[0_4px_20px_rgba(91,46,247,0.25)]"
-          >
-            Criar Evento
-          </button>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => onSubmit({ ...formData, coverImage, bannerImage, selectedTickets, lotes, isDraft: true })}
+              className="flex-1 bg-white border-2 border-indigo-100 text-[#5b2ef7] font-bold py-3.5 rounded-[12px] hover:border-indigo-300 hover:bg-indigo-50 transition-all"
+            >
+              Salvar nos Rascunhos
+            </button>
+            <button 
+              onClick={handleFormSubmit}
+              className="flex-1 bg-[#5b2ef7] text-white font-bold py-3.5 rounded-[12px] hover:bg-indigo-700 transition-all shadow-[0_4px_20px_rgba(91,46,247,0.25)]"
+            >
+              Criar Evento
+            </button>
+          </div>
         </div>
 
       </div>
