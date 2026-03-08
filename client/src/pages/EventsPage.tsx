@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CreateEventFormModal from "../components/CreateEventFormModal";
 import { Calendar, Search, MapPin, Tag, Filter, Plus, Eye, Edit, Trash2 } from "lucide-react";
 
@@ -13,6 +13,23 @@ export default function EventsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [localEvents, setLocalEvents] = useState<any[]>([]);
+
+  // Carregar eventos do localStorage ao montar o componente
+  useEffect(() => {
+    const savedEvents = localStorage.getItem('agitai_events');
+    if (savedEvents) {
+      try {
+        setLocalEvents(JSON.parse(savedEvents));
+      } catch (error) {
+        console.error('Erro ao carregar eventos do localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Salvar eventos no localStorage sempre que localEvents mudar
+  useEffect(() => {
+    localStorage.setItem('agitai_events', JSON.stringify(localEvents));
+  }, [localEvents]);
 
   const handleCreateEvent = (eventData: any) => {
     console.log("Novo evento a ser criado:", eventData);
@@ -38,13 +55,13 @@ export default function EventsPage() {
     
     // Se está editando um evento existente, atualizar o evento local
     if (editingEvent) {
-      setLocalEvents(prevEvents =>
-        prevEvents.map(event => event.id === editingEvent.id ? { ...newEvent, id: editingEvent.id } : event)
-      );
+      const updatedEvents = localEvents.map(event => event.id === editingEvent.id ? { ...newEvent, id: editingEvent.id } : event);
+      setLocalEvents(updatedEvents);
       alert("Evento '" + newEvent.title + "' atualizado com sucesso!");
     } else {
       // Adicionar novo evento à lista local
-      setLocalEvents(prevEvents => [...prevEvents, newEvent]);
+      const newEvents = [...localEvents, newEvent];
+      setLocalEvents(newEvents);
       alert("Evento '" + newEvent.title + "' criado como " + (status === "draft" ? "rascunho" : "publicado") + " com sucesso!");
     }
     
