@@ -64,6 +64,7 @@ export default function MapPage() {
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [activeTab, setActiveTab] = useState<"reviews" | "info">("info");
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number; cityName: string } | null>(null);
+  const [localStorageEvents, setLocalStorageEvents] = useState<any[]>([]);
   
   const mapRef = useRef<any>(null);
   const markersRef = useRef<L.Marker[]>([]);
@@ -124,7 +125,25 @@ export default function MapPage() {
     } catch {}
   }, []);
 
-  const filteredEvents = events.filter((event) => {
+  // Carregar eventos do localStorage
+  useEffect(() => {
+    const savedEvents = localStorage.getItem('agitai_events');
+    if (savedEvents) {
+      try {
+        const parsed = JSON.parse(savedEvents);
+        // Filtrar apenas eventos publicados
+        const publishedEvents = parsed.filter((e: any) => e.status === 'published');
+        setLocalStorageEvents(publishedEvents);
+      } catch (error) {
+        console.error('Erro ao carregar eventos do localStorage:', error);
+      }
+    }
+  }, []);
+
+  // Combinar eventos estáticos com eventos do localStorage
+  const allEvents = [...events, ...localStorageEvents];
+
+  const filteredEvents = allEvents.filter((event) => {
     if (selectedCity !== "all" && selectedCity !== "current" && event.city_id !== selectedCity) return false;
     if (selectedCity === "current" && userLocation) {
       const distance = calculateDistance(userLocation.latitude, userLocation.longitude, event.latitude, event.longitude);
