@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import CreateEventFormModal from "../components/CreateEventFormModal";
 import { Calendar, Search, MapPin, Tag, Filter, Plus, Eye, Edit, Trash2 } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -246,6 +247,7 @@ export default function EventsPage() {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center justify-end gap-1">
+
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
                             <Eye className="w-4 h-4" />
                           </Button>

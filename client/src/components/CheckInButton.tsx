@@ -57,7 +57,7 @@ export function CheckInButton({ eventId, eventTitle }: CheckInButtonProps) {
         {/* Fundo circular cinza claro */}
         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
           <img
-            src={isCheckedIn ? "/icons/location-pin-active.png" : "/icons/location-pin-inactive.png"}
+            src={isCheckedIn ? "/check-in-enable.png" : "/check-in-disable.png"}
             alt={isCheckedIn ? "Presença confirmada" : "Confirmar presença"}
             className="w-6 h-6 object-contain"
           />

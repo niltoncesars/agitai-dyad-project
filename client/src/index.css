@@ -175,3 +175,16 @@
     }
   }
 }
+
+/* Estilo para as categorias de eventos no dropdown */
+optgroup[label] {
+  background-color: #e0e7ff !important;
+  font-weight: bold;
+  color: #3f51b5 !important;
+}
+
+optgroup[label] option {
+  background-color: #ffffff !important;
+  color: #333333 !important;
+  font-weight: normal;
+}
