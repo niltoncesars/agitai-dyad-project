@@ -11,6 +11,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 
 export default function EventsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<any>(null);
 
   const handleCreateEvent = (eventData: any) => {
     console.log("Novo evento a ser criado:", eventData);
@@ -35,6 +36,17 @@ export default function EventsPage() {
     console.log("Evento simulado:", newEvent);
     alert("Evento '" + newEvent.title + "' criado como rascunho com sucesso!");
     setIsModalOpen(false);
+    setEditingEvent(null);
+  };
+
+  const handleEditEvent = (event: any) => {
+    setEditingEvent(event);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingEvent(null);
   };
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -251,7 +263,12 @@ export default function EventsPage() {
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-lg"
+                            onClick={() => handleEditEvent(event)}
+                          >
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive">
@@ -270,8 +287,9 @@ export default function EventsPage() {
         </DashboardLayout>
       <CreateEventFormModal
       isOpen={isModalOpen}
-      onClose={() => setIsModalOpen(false)}
+      onClose={handleCloseModal}
       onSubmit={handleCreateEvent}
+      editingEvent={editingEvent}
     />
     </React.Fragment>
   );

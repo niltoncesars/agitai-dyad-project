@@ -1,11 +1,12 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Upload, Trash2, Plus } from "lucide-react";
 
 interface CreateEventFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => void;
+  editingEvent?: any;
 }
 
 const brazilianStates = [
@@ -89,24 +90,44 @@ const eventCategories = [
   }
 ];
 
-const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    title: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-    gateTime: "",
-    censorship: "",
-    category: "",
-    organizer: "",
-    locationName: "",
-    city: "",
-    state: "",
-    address: "",
-    tickets: [],
-  });
+const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onClose, onSubmit, editingEvent }) => {
+  const getInitialFormData = () => {
+    if (editingEvent) {
+      return {
+        title: editingEvent.title || "",
+        date: editingEvent.date ? new Date(editingEvent.date).toISOString().split('T')[0] : "",
+        startTime: "",
+        endTime: "",
+        gateTime: "",
+        censorship: "",
+        category: editingEvent.category || "",
+        organizer: editingEvent.organizer_name || "",
+        locationName: "",
+        city: editingEvent.city_name || "",
+        state: "",
+        address: "",
+        tickets: [],
+      };
+    }
+    return {
+      title: "",
+      date: "",
+      startTime: "",
+      endTime: "",
+      gateTime: "",
+      censorship: "",
+      category: "",
+      organizer: "",
+      locationName: "",
+      city: "",
+      state: "",
+      address: "",
+      tickets: [],
+    };
+  };
 
-  const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [formData, setFormData] = useState(getInitialFormData());
+  const [coverImage, setCoverImage] = useState<string | null>(editingEvent?.image || null);
   const [bannerImage, setBannerImage] = useState<string | null>(null);
   const [selectedTickets, setSelectedTickets] = useState<string[]>(["Pista", "Camarote"]);
   const [lotes, setLotes] = useState<any[]>([
@@ -122,6 +143,13 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingEvent && isOpen) {
+      setFormData(getInitialFormData());
+      setCoverImage(editingEvent.image || null);
+    }
+  }, [editingEvent, isOpen]);
 
   if (!isOpen) return null;
 
@@ -181,7 +209,7 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
       ...prevLotes,
       {
         id: newId,
-        ticketType: selectedTickets[0] || "", // Default to the first selected ticket type
+        ticketType: selectedTickets[0] || "Pista",
         quantity: "",
         price: "",
         startDate: "",
@@ -195,327 +223,326 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-[#f4f2ff] w-full max-w-[720px] rounded-[24px] shadow-2xl relative animate-in fade-in zoom-in duration-300 max-h-[90vh] flex flex-col">
-        
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-[24px] w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
-        <div className="p-6 flex items-center gap-4 sticky top-0 bg-[#f4f2ff] z-10 rounded-t-[24px] border-b border-indigo-100">
-          <button 
-            onClick={onClose}
-            className="w-10 h-10 rounded-full border border-indigo-100 bg-white flex items-center justify-center hover:border-indigo-500 hover:shadow-md transition-all group"
-          >
-            <ArrowLeft className="w-5 h-5 text-indigo-400 group-hover:text-indigo-600" />
-          </button>
-          <h2 className="text-[22px] font-[800] tracking-tight text-[#1a1530] font-syne">
-            Criar Novo <span className="text-[#5b2ef7]">Evento</span>
-          </h2>
-          <span className="ml-auto flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-[#5b2ef7] bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full uppercase">
-            <span className="w-1.5 h-1.5 bg-[#5b2ef7] rounded-full"></span>
-            Tenant
-          </span>
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between rounded-t-[24px]">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h2 className="text-2xl font-bold">{editingEvent ? "Editar" : "Criar Novo"} <span className="text-[#5b2ef7]">Evento</span></h2>
+              <p className="text-sm text-gray-500 mt-1">TENANT</p>
+            </div>
+          </div>
         </div>
 
-        {/* Form Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-          
+        {/* Content */}
+        <div className="p-6 space-y-6">
           {/* Images Section */}
-          <section>
-            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[''] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
-              Imagens do Evento
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.6fr] gap-4">
-              {/* Cover Slot */}
-              <div 
-                className={`relative aspect-[415/510] rounded-[12px] border-2 border-dashed flex flex-col items-center justify-center gap-2.5 cursor-pointer overflow-hidden transition-all group ${coverImage ? 'border-indigo-500 bg-white' : 'border-indigo-100 bg-white hover:border-indigo-400 hover:bg-indigo-50/30'}`}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-[#5b2ef7] uppercase">Imagens do Evento</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Cover Image */}
+              <div
                 onClick={() => coverInputRef.current?.click()}
+                className="border-2 border-dashed border-red-300 rounded-[12px] p-6 text-center cursor-pointer hover:bg-red-50 transition-colors"
               >
-                <input 
-                  type="file" 
+                {coverImage ? (
+                  <div className="relative">
+                    <img src={coverImage} alt="Capa" className="w-full h-32 object-cover rounded-lg" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCoverImage(null);
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-lg hover:bg-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <Upload className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <p className="font-semibold text-gray-800">Capa do Cartão</p>
+                    <p className="text-xs text-gray-500 mt-1">Clique para adicionar</p>
+                    <p className="text-xs text-gray-400 mt-2">415 × 510 px</p>
+                  </div>
+                )}
+                <input
                   ref={coverInputRef}
-                  className="hidden" 
+                  type="file"
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, 'cover')}
+                  className="hidden"
                 />
-                <span className="absolute top-2.5 left-2.5 px-2.5 py-1 bg-[#5b2ef7] text-white text-[10px] font-bold rounded-full uppercase z-10">Capa</span>
-                
-                {coverImage ? (
-                  <>
-                    <img src={coverImage} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-[#5b2ef7]/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                      <Upload className="w-5 h-5 mb-1" />
-                      <span className="text-xs font-semibold">Trocar imagem</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                      <Upload className="w-5 h-5 text-indigo-500" />
-                    </div>
-                    <div className="text-center px-4">
-                      <strong className="block text-[13px] text-[#5b2ef7]">Capa do Cartão</strong>
-                      <span className="text-[12px] text-[#8b86a8]">Clique para adicionar</span>
-                    </div>
-                    <div className="text-[11px] font-semibold text-indigo-500 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md">415 × 510 px</div>
-                  </>
-                )}
               </div>
 
-              {/* Banner Slot */}
-              <div 
-                className={`relative aspect-[1056/553] rounded-[12px] border-2 border-dashed flex flex-col items-center justify-center gap-2.5 cursor-pointer overflow-hidden transition-all group ${bannerImage ? 'border-indigo-500 bg-white' : 'border-indigo-100 bg-white hover:border-indigo-400 hover:bg-indigo-50/30'}`}
+              {/* Banner Image */}
+              <div
                 onClick={() => bannerInputRef.current?.click()}
+                className="border-2 border-dashed border-blue-300 rounded-[12px] p-6 text-center cursor-pointer hover:bg-blue-50 transition-colors"
               >
-                <input 
-                  type="file" 
+                {bannerImage ? (
+                  <div className="relative">
+                    <img src={bannerImage} alt="Banner" className="w-full h-32 object-cover rounded-lg" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBannerImage(null);
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-lg hover:bg-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <Upload className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <p className="font-semibold text-gray-800">Banner do Evento</p>
+                    <p className="text-xs text-gray-500 mt-1">Clique para adicionar</p>
+                    <p className="text-xs text-gray-400 mt-2">1056 × 553 px</p>
+                  </div>
+                )}
+                <input
                   ref={bannerInputRef}
-                  className="hidden" 
+                  type="file"
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, 'banner')}
+                  className="hidden"
                 />
-                <span className="absolute top-2.5 left-2.5 px-2.5 py-1 bg-[#5b2ef7] text-white text-[10px] font-bold rounded-full uppercase z-10">Banner</span>
-                
-                {bannerImage ? (
-                  <>
-                    <img src={bannerImage} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-[#5b2ef7]/60 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                      <Upload className="w-5 h-5 mb-1" />
-                      <span className="text-xs font-semibold">Trocar imagem</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                      <Upload className="w-5 h-5 text-indigo-500" />
-                    </div>
-                    <div className="text-center px-4">
-                      <strong className="block text-[13px] text-[#5b2ef7]">Banner do Evento</strong>
-                      <span className="text-[12px] text-[#8b86a8]">Clique para adicionar</span>
-                    </div>
-                    <div className="text-[11px] font-semibold text-indigo-500 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-md">1056 × 553 px</div>
-                  </>
-                )}
               </div>
             </div>
           </section>
 
-
-
-          {/* Details Section */}
-          <section>
-            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[''] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
-              Detalhes do Evento
-            </div>
+          {/* Event Details Section */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-[#5b2ef7] uppercase">Detalhes do Evento</h3>
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[12px] font-semibold text-[#5a5478]">Nome do Evento <span className="text-pink-500">*</span></label>
-                <input type="text" name="title" value={formData.title} onChange={handleInputChange} placeholder="Nome do Evento" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+              <input
+                type="text"
+                name="title"
+                placeholder="Nome do Evento"
+                value={formData.title}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="date"
+                  name="date"
+                  placeholder="Data do Evento"
+                  value={formData.date}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+                />
+                <input
+                  type="time"
+                  name="startTime"
+                  placeholder="Horário de Início"
+                  value={formData.startTime}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+                />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Data <span className="text-pink-500">*</span></label>
-                  <input type="date" name="date" value={formData.date} onChange={handleInputChange} placeholder="Data do Evento" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Horário <span className="text-pink-500">*</span></label>
-                  <div className="flex items-center gap-2">
-                    <input type="time" name="startTime" value={formData.startTime} onChange={handleInputChange} placeholder="Horário de Início" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                    <span className="text-[13px] text-[#8b86a8]">até</span>
-                    <input type="time" name="endTime" value={formData.endTime} onChange={handleInputChange} placeholder="Horário de Término" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                  </div>
-                </div>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="time"
+                  name="endTime"
+                  placeholder="Horário de Término"
+                  value={formData.endTime}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+                />
+                <input
+                  type="time"
+                  name="gateTime"
+                  placeholder="Abertura dos Portões"
+                  value={formData.gateTime}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+                />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Abertura dos Portões <span className="text-pink-500">*</span></label>
-                  <input type="time" name="gateTime" value={formData.gateTime} onChange={handleInputChange} placeholder="Abertura dos Portões" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Censura <span className="text-pink-500">*</span></label>
-                <select name="censorship" value={formData.censorship} onChange={handleInputChange} placeholder="Censura" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]">
-                    <option value="">Selecione</option>
-                    <option value="livre">Livre</option>
-                    <option value="12">12 anos</option>
-                    <option value="14">14 anos</option>
-                    <option value="16">16 anos</option>
-                    <option value="18">18 anos</option>
-                  </select>
-                </div>
+              <div className="grid grid-cols-2 gap-4">
+                <select
+                  name="censorship"
+                  value={formData.censorship}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+                >
+                  <option value="">Selecione</option>
+                  <option value="Livre">Livre</option>
+                  <option value="12">12 anos</option>
+                  <option value="14">14 anos</option>
+                  <option value="16">16 anos</option>
+                  <option value="18">18 anos</option>
+                </select>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+                >
+                  <option value="">Selecione a categoria</option>
+                  {eventCategories.map((cat) => (
+                    <optgroup key={cat.label} label={cat.label}>
+                      {cat.options.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Estilo do Evento <span className="text-pink-500">*</span></label>
-                <select name="category" value={formData.category} onChange={handleInputChange} placeholder="Estilo do Evento" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]">
-                    <option value="">Selecione a categoria</option>
-                    {eventCategories.map((cat) => (
-                      <optgroup key={cat.label} label={cat.label} className="event-category-optgroup">
-                        {cat.options.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Organização <span className="text-pink-500">*</span></label>
-                  <input type="text" name="organizer" value={formData.organizer} onChange={handleInputChange} placeholder="Organização" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                </div>
-              </div>
+              <input
+                type="text"
+                name="organizer"
+                placeholder="Organização"
+                value={formData.organizer}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+              />
             </div>
           </section>
 
           {/* Location Section */}
-          <section>
-            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[''] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
-              Local
-            </div>
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-[#5b2ef7] uppercase">Local</h3>
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_0.5fr] gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Nome do Local <span className="text-pink-500">*</span></label>
-                 <input type="text" name="locationName" value={formData.locationName} onChange={handleInputChange} placeholder="Nome do Local" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Cidade <span className="text-pink-500">*</span></label>
-                <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="Cidade" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Estado <span className="text-pink-500">*</span></label>
-                  <select name="state" value={formData.state} onChange={handleInputChange} placeholder="Estado" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]">                   <option value="">UF</option>
-                    {brazilianStates.map((state) => (
-                      <option key={state.value} value={state.value}>
-                        {state.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[12px] font-semibold text-[#5a5478]">Endereço Completo <span className="text-pink-500">*</span></label>
-               <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Endereço Completo" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-              </div>
+              <input
+                type="text"
+                name="locationName"
+                placeholder="Nome do Local"
+                value={formData.locationName}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+              />
+              <input
+                type="text"
+                name="city"
+                placeholder="Cidade"
+                value={formData.city}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+              />
+              <select
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+              >
+                <option value="">UF</option>
+                {brazilianStates.map((state) => (
+                  <option key={state.value} value={state.value}>{state.label}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                name="address"
+                placeholder="Endereço Completo"
+                value={formData.address}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-[12px] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+              />
             </div>
           </section>
 
-          {/* Tickets & Batches Section */}
-          <section>
-            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[''] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
-              Ingressos & Lotes
-            </div>
-            <div className="bg-white rounded-[12px] border border-indigo-100 p-6 shadow-sm">
-              <div className="mb-5">
-                <label className="block text-xs font-semibold text-[#5a5478] mb-1.5">
-                  Tipos de Ingresso <span className="text-[#e8005a]">*</span>
-                </label>
-                <div className="flex flex-wrap gap-2" id="ticketTypes">
-                  {["Pista", "Camarote", "VIP", "Backstage"].map((type) => (
-                    <label
-                      key={type}
-                      className={`flex items-center gap-2 px-3.5 py-2 rounded-full border border-indigo-100 bg-indigo-50/30 cursor-pointer text-sm font-medium transition-all select-none ${selectedTickets.includes(type) ? "border-[#5b2ef7] bg-[#5b2ef7]/10 text-[#5b2ef7] font-semibold" : "text-[#8b86a8]"}`}
-                      onClick={() => toggleTicket(type)}
-                    >
-                      <input type="checkbox" className="hidden" checked={selectedTickets.includes(type)} readOnly />
-                      <span className={`w-1.5 h-1.5 rounded-full ${selectedTickets.includes(type) ? "bg-[#5b2ef7]" : "bg-[#ccc]"}`}></span>
-                      {type}
-                    </label>
-                  ))}
-                </div>
+          {/* Tickets Section */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-[#5b2ef7] uppercase">Ingressos & Lotes</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-gray-800">Tipos de Ingresso</h4>
+                <button
+                  onClick={addLote}
+                  className="text-[#5b2ef7] text-sm font-semibold flex items-center gap-1 hover:text-indigo-700"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar Lote
+                </button>
               </div>
 
-              <div className="h-[1.5px] bg-indigo-100 my-5"></div>
-
-              <div className="space-y-5" id="lotesList">
-                {lotes.map((lote, loteIndex) => (
-                  <div key={lote.id} className="bg-[#f8f7ff] rounded-[12px] border border-indigo-100 p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="flex items-center gap-2 text-base font-bold text-[#1a1530]">
-                        <span className="w-6 h-6 rounded-full bg-[#5b2ef7] text-white flex items-center justify-center text-xs font-bold">{loteIndex + 1}</span>
-                        {loteIndex + 1}º Lote
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeLote(lote.id)}
-                        className="w-8 h-8 rounded-full bg-red-50/50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {selectedTickets.map((type) => (
-                        <button
-                          key={type}
-                          type="button"
-                          className={`px-3.5 py-2 rounded-full text-sm font-medium transition-all ${lote.ticketType === type ? "bg-[#5b2ef7] text-white" : "bg-indigo-50/30 text-[#5b2ef7] hover:bg-[#5b2ef7]/20"}`}
-                          onClick={() => handleLoteChange(lote.id, "ticketType", type)}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="block text-xs font-semibold text-[#5a5478]">Quantidade de Ingressos <span className="text-[#e8005a]">*</span></label>
-                        <input
-                          type="number"
-                          placeholder="Quantidade de Ingressos"
-                          min="1"
-                          value={lote.quantity}
-                          onChange={(e) => handleLoteChange(lote.id, "quantity", e.target.value)}
-                          className="bg-[#f8f7ff] border border-indigo-100 rounded-md px-3 py-2 text-sm text-[#1a1530] focus:outline-none focus:ring-2 focus:ring-[#5b2ef7] focus:border-transparent"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="block text-xs font-semibold text-[#5a5478]">Valor <span className="text-[#e8005a]">*</span></label>
-                        <div className="relative flex items-center">
-                          <span className="absolute left-3 text-[#8b86a8] text-sm">R$</span>
-                          <input
-                            type="number"
-                            placeholder="0,00"
-                            min="0"
-                            step="0.01"
-                            value={lote.price}
-                            onChange={(e) => handleLoteChange(lote.id, "price", e.target.value)}
-                            className="pl-9 bg-[#f8f7ff] border border-indigo-100 rounded-md px-3 py-2 text-sm text-[#1a1530] focus:outline-none focus:ring-2 focus:ring-[#5b2ef7] focus:border-transparent w-full"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="block text-xs font-semibold text-[#5a5478]">Início do Lote <span className="text-[#e8005a]">*</span></label>
-                        <input
-                          type="datetime-local"
-                          value={lote.startDate}
-                          onChange={(e) => handleLoteChange(lote.id, "startDate", e.target.value)}
-                          className="bg-[#f8f7ff] border border-indigo-100 rounded-md px-3 py-2 text-sm text-[#1a1530] focus:outline-none focus:ring-2 focus:ring-[#5b2ef7] focus:border-transparent"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="block text-xs font-semibold text-[#5a5478]">Fim do Lote <span className="text-[#e8005a]">*</span></label>
-                        <input
-                          type="datetime-local"
-                          value={lote.endDate}
-                          onChange={(e) => handleLoteChange(lote.id, "endDate", e.target.value)}
-                          className="bg-[#f8f7ff] border border-indigo-100 rounded-md px-3 py-2 text-sm text-[#1a1530] focus:outline-none focus:ring-2 focus:ring-[#5b2ef7] focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-                  </div>
+              <div className="space-y-2">
+                {["Pista", "Camarote", "VIP", "Backstage"].map((type) => (
+                  <label key={type} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={selectedTickets.includes(type)}
+                      onChange={() => toggleTicket(type)}
+                      className="w-5 h-5 rounded-full accent-[#5b2ef7]"
+                    />
+                    <span className="font-medium text-gray-700">{type}</span>
+                  </label>
                 ))}
               </div>
 
-              <button
-                type="button"
-                onClick={addLote}
-                className="mt-5 w-full py-3 rounded-xl border border-indigo-100 bg-white text-[#5a5478] font-medium flex items-center justify-center gap-2 hover:border-indigo-300 hover:text-[#5b2ef7] hover:shadow-sm transition-all"
-              >
-                <Plus className="w-5 h-5" />
-                Adicionar Lote
-              </button>
+              {/* Lotes */}
+              <div className="space-y-4 mt-6">
+                {lotes.map((lote) => (
+                  <div key={lote.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h5 className="font-semibold text-gray-800">Lote {lote.id}</h5>
+                      {lotes.length > 1 && (
+                        <button
+                          onClick={() => removeLote(lote.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <select
+                        value={lote.ticketType}
+                        onChange={(e) => handleLoteChange(lote.id, "ticketType", e.target.value)}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+                      >
+                        {selectedTickets.map((type) => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        placeholder="Quantidade de Ingressos"
+                        value={lote.quantity}
+                        onChange={(e) => handleLoteChange(lote.id, "quantity", e.target.value)}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-center border border-gray-300 rounded-lg px-3 py-2">
+                        <span className="text-gray-500 mr-2">R$</span>
+                        <input
+                          type="number"
+                          placeholder="0,00"
+                          value={lote.price}
+                          onChange={(e) => handleLoteChange(lote.id, "price", e.target.value)}
+                          className="flex-1 border-0 focus:outline-none focus:ring-0 text-sm"
+                        />
+                      </div>
+                      <input
+                        type="datetime-local"
+                        value={lote.startDate}
+                        onChange={(e) => handleLoteChange(lote.id, "startDate", e.target.value)}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+                      />
+                    </div>
+                    <input
+                      type="datetime-local"
+                      value={lote.endDate}
+                      onChange={(e) => handleLoteChange(lote.id, "endDate", e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5b2ef7]"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
 
@@ -534,7 +561,7 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
               onClick={handleFormSubmit}
               className="flex-1 bg-[#5b2ef7] text-white font-bold py-3.5 rounded-[12px] hover:bg-indigo-700 transition-all shadow-[0_4px_20px_rgba(91,46,247,0.25)]"
             >
-              Criar Evento
+              {editingEvent ? "Atualizar Evento" : "Criar Evento"}
             </button>
           </div>
         </div>
