@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import CreateEventFormModal from "../components/CreateEventFormModal";
 import { Calendar, Search, MapPin, Tag, Filter, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,33 @@ import { events, cities, formatCurrency } from "@/lib/mock-data";
 import DashboardLayout from "@/components/DashboardLayout";
 
 export default function EventsPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCreateEvent = (eventData: any) => {
+    console.log("Novo evento a ser criado:", eventData);
+    // Simulação de criação de evento
+    const newEvent = {
+      id: (events.length + 1).toString(),
+      title: eventData.title || "Novo Evento",
+      organizer_name: eventData.organizer || "Organizador",
+      category: eventData.category || "Outro",
+      city_id: "1", // Mock city id
+      city_name: eventData.city || "São Paulo",
+      date: eventData.date || new Date().toISOString(),
+      price: 0,
+      tickets_sold: 0,
+      tickets_total: 1000,
+      status: "draft",
+      image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=60"
+    };
+    
+    // Como estamos usando mock-data estático, não podemos dar push diretamente no array importado
+    // Em um cenário real, isso seria uma chamada de API e atualização de estado global ou local
+    console.log("Evento simulado:", newEvent);
+    alert("Evento '" + newEvent.title + "' criado como rascunho com sucesso!");
+    setIsModalOpen(false);
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -42,7 +70,8 @@ export default function EventsPage() {
   };
 
   return (
-    <DashboardLayout>
+    <React.Fragment>
+      <DashboardLayout>
       <div className="p-4 lg:p-6 space-y-6 max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -56,7 +85,7 @@ export default function EventsPage() {
               {filteredEvents.length} evento{filteredEvents.length !== 1 ? "s" : ""} encontrado{filteredEvents.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button className="gap-2 self-start sm:self-auto">
+          <Button className="gap-2 self-start sm:self-auto" onClick={() => setIsModalOpen(true)}>
             <Plus className="w-4 h-4" />
             Novo Evento
           </Button>
@@ -236,6 +265,12 @@ export default function EventsPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+        </DashboardLayout>
+      <CreateEventFormModal
+      isOpen={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+      onSubmit={handleCreateEvent}
+    />
+    </React.Fragment>
   );
 }
