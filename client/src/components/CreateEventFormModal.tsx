@@ -298,9 +298,112 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
             </div>
           </section>
 
-          {/* Tickets Section */}
+
+
+          {/* Details Section */}
           <section>
-            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[\'\'] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
+            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[''] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
+              Detalhes do Evento
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[12px] font-semibold text-[#5a5478]">Nome do Evento <span className="text-pink-500">*</span></label>
+                <input type="text" name="title" value={formData.title} onChange={handleInputChange} placeholder="Nome do Evento" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-semibold text-[#5a5478]">Data <span className="text-pink-500">*</span></label>
+                  <input type="date" name="date" value={formData.date} onChange={handleInputChange} placeholder="Data do Evento" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-semibold text-[#5a5478]">Horário <span className="text-pink-500">*</span></label>
+                  <div className="flex items-center gap-2">
+                    <input type="time" name="startTime" value={formData.startTime} onChange={handleInputChange} placeholder="Horário de Início" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                    <span className="text-[13px] text-[#8b86a8]">até</span>
+                    <input type="time" name="endTime" value={formData.endTime} onChange={handleInputChange} placeholder="Horário de Término" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-semibold text-[#5a5478]">Abertura dos Portões <span className="text-pink-500">*</span></label>
+                  <input type="time" name="gateTime" value={formData.gateTime} onChange={handleInputChange} placeholder="Abertura dos Portões" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-semibold text-[#5a5478]">Censura <span className="text-pink-500">*</span></label>
+                <select name="censorship" value={formData.censorship} onChange={handleInputChange} placeholder="Censura" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]">
+                    <option value="">Selecione</option>
+                    <option value="livre">Livre</option>
+                    <option value="12">12 anos</option>
+                    <option value="14">14 anos</option>
+                    <option value="16">16 anos</option>
+                    <option value="18">18 anos</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-semibold text-[#5a5478]">Estilo do Evento <span className="text-pink-500">*</span></label>
+                <select name="category" value={formData.category} onChange={handleInputChange} placeholder="Estilo do Evento" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]">
+                    <option value="">Selecione a categoria</option>
+                    {eventCategories.map((cat) => (
+                      <optgroup key={cat.label} label={cat.label} className="event-category-optgroup">
+                        {cat.options.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-semibold text-[#5a5478]">Organização <span className="text-pink-500">*</span></label>
+                  <input type="text" name="organizer" value={formData.organizer} onChange={handleInputChange} placeholder="Organização" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Location Section */}
+          <section>
+            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[''] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
+              Local
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_0.5fr] gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-semibold text-[#5a5478]">Nome do Local <span className="text-pink-500">*</span></label>
+                 <input type="text" name="locationName" value={formData.locationName} onChange={handleInputChange} placeholder="Nome do Local" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-semibold text-[#5a5478]">Cidade <span className="text-pink-500">*</span></label>
+                <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="Cidade" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-semibold text-[#5a5478]">Estado <span className="text-pink-500">*</span></label>
+                  <select name="state" value={formData.state} onChange={handleInputChange} placeholder="Estado" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]">                   <option value="">UF</option>
+                    {brazilianStates.map((state) => (
+                      <option key={state.value} value={state.value}>
+                        {state.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[12px] font-semibold text-[#5a5478]">Endereço Completo <span className="text-pink-500">*</span></label>
+               <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Endereço Completo" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
+              </div>
+            </div>
+          </section>
+
+          {/* Tickets & Batches Section */}
+          <section>
+            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[''] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
               Ingressos & Lotes
             </div>
             <div className="bg-white rounded-[12px] border border-indigo-100 p-6 shadow-sm">
@@ -413,150 +516,6 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
                 <Plus className="w-5 h-5" />
                 Adicionar Lote
               </button>
-            </div>
-          </section>
-
-          {/* Details Section */}
-          <section>
-            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[''] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
-              Detalhes do Evento
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[12px] font-semibold text-[#5a5478]">Nome do Evento <span className="text-pink-500">*</span></label>
-                <input type="text" name="title" value={formData.title} onChange={handleInputChange} placeholder="Nome do Evento" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Data <span className="text-pink-500">*</span></label>
-                  <input type="date" name="date" value={formData.date} onChange={handleInputChange} placeholder="Data do Evento" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Horário <span className="text-pink-500">*</span></label>
-                  <div className="flex items-center gap-2">
-                    <input type="time" name="startTime" value={formData.startTime} onChange={handleInputChange} placeholder="Horário de Início" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                    <span className="text-[13px] text-[#8b86a8]">até</span>
-                    <input type="time" name="endTime" value={formData.endTime} onChange={handleInputChange} placeholder="Horário de Término" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Abertura dos Portões <span className="text-pink-500">*</span></label>
-                  <input type="time" name="gateTime" value={formData.gateTime} onChange={handleInputChange} placeholder="Abertura dos Portões" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Censura <span className="text-pink-500">*</span></label>
-                <select name="censorship" value={formData.censorship} onChange={handleInputChange} placeholder="Censura" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]">
-                    <option value="">Selecione</option>
-                    <option value="livre">Livre</option>
-                    <option value="12">12 anos</option>
-                    <option value="14">14 anos</option>
-                    <option value="16">16 anos</option>
-                    <option value="18">18 anos</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Estilo do Evento <span className="text-pink-500">*</span></label>
-                <select name="category" value={formData.category} onChange={handleInputChange} placeholder="Estilo do Evento" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]">
-                    <option value="">Selecione a categoria</option>
-                    {eventCategories.map((cat) => (
-                      <optgroup key={cat.label} label={cat.label} className="event-category-optgroup">
-                        {cat.options.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Organização <span className="text-pink-500">*</span></label>
-                  <input type="text" name="organizer" value={formData.organizer} onChange={handleInputChange} placeholder="Organização" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Location Section */}
-          <section>
-            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[''] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
-              Local
-            </div>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_0.5fr] gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Nome do Local <span className="text-pink-500">*</span></label>
-                 <input type="text" name="locationName" value={formData.locationName} onChange={handleInputChange} placeholder="Nome do Local" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Cidade <span className="text-pink-500">*</span></label>
-                <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="Cidade" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Estado <span className="text-pink-500">*</span></label>
-                  <select name="state" value={formData.state} onChange={handleInputChange} placeholder="Estado" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]">                   <option value="">UF</option>
-                    {brazilianStates.map((state) => (
-                      <option key={state.value} value={state.value}>
-                        {state.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[12px] font-semibold text-[#5a5478]">Endereço Completo <span className="text-pink-500">*</span></label>
-               <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Endereço Completo" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all" />
-              </div>
-            </div>
-          </section>
-
-          {/* Tickets Section */}
-          <section>
-            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[''] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
-              Ingressos
-            </div>
-            <div className="bg-white p-4 rounded-[12px] border border-indigo-50">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-bold text-[#1a1530]">Tipos de Ingresso</h4>
-                <button className="flex items-center gap-1.5 text-[12px] font-semibold text-[#5b2ef7] hover:text-indigo-700">
-                  <Plus className="w-4 h-4" />
-                  Adicionar Lote
-                </button>
-              </div>
-              <div className="space-y-3">
-                {["Pista", "Camarote", "Front-stage", "Backstage"].map(type => (
-                  <div key={type} className="flex items-center justify-between p-3 bg-[#f8f7ff] rounded-[8px]">
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer" 
-                          checked={selectedTickets.includes(type)}
-                          onChange={() => toggleTicket(type)}
-                        />
-                        <div className="w-5 h-5 border-2 border-indigo-200 rounded-md peer-checked:bg-[#5b2ef7] peer-checked:border-[#5b2ef7] flex items-center justify-center transition-all">
-                          <svg className="w-3 h-3 text-white fill-current opacity-0 peer-checked:opacity-100" viewBox="0 0 24 24"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg>
-                        </div>
-                      </label>
-                      <span className="font-semibold text-[#1a1530]">{type}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[12px] text-[#8b86a8]">Lote 1</span>
-                      <span className="font-bold text-[#1a1530]">R$ 120,00</span>
-                      <button className="w-7 h-7 rounded-md bg-white border border-indigo-100 flex items-center justify-center hover:bg-red-50 hover:border-red-200 group">
-                        <Trash2 className="w-3.5 h-3.5 text-indigo-400 group-hover:text-red-500" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </section>
 
