@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import CreateEventFormModal from "../components/CreateEventFormModal";
-import { Calendar, Search, MapPin, Tag, Filter, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import { Calendar, Search, MapPin, Tag, Filter, Plus, Eye, EyeOff, Edit, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { events, cities, formatCurrency } from "@/lib/mock-data";
 import DashboardLayout from "@/components/DashboardLayout";
+import { toast } from "sonner";
 
 export default function EventsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [localEvents, setLocalEvents] = useState<any[]>([]);
+  const [hiddenEventIds, setHiddenEventIds] = useState<string[]>([]);
 
-  // Carregar eventos do localStorage ao montar o componente
+  // Carregar eventos e IDs ocultos do localStorage ao montar o componente
   useEffect(() => {
     const savedEvents = localStorage.getItem('agitai_events');
     if (savedEvents) {
@@ -24,6 +26,15 @@ export default function EventsPage() {
         console.error('Erro ao carregar eventos do localStorage:', error);
       }
     }
+
+    const savedHiddenIds = localStorage.getItem('agitai_hidden_events');
+    if (savedHiddenIds) {
+      try {
+        setHiddenEventIds(JSON.parse(savedHiddenIds));
+      } catch (error) {
+        console.error('Erro ao carregar IDs ocultos do localStorage:', error);
+      }
+    }
   }, []);
 
   // Salvar eventos no localStorage sempre que localEvents mudar
@@ -31,43 +42,61 @@ export default function EventsPage() {
     localStorage.setItem('agitai_events', JSON.stringify(localEvents));
   }, [localEvents]);
 
+  // Salvar IDs ocultos no localStorage sempre que hiddenEventIds mudar
+  useEffect(() => {
+    localStorage.setItem('agitai_hidden_events', JSON.stringify(hiddenEventIds));
+    // Disparar evento para atualizar o mapa se necessário
+    window.dispatchEvent(new Event("visibility_updated"));
+  }, [hiddenEventIds]);
+
   const handleCreateEvent = (eventData: any) => {
     console.log("Novo evento a ser criado:", eventData);
     
     // Determinar o status baseado no isDraft
     const status = eventData.isDraft ? "draft" : "published";
     
-    // Encontrar a cidade correspondente ao nome fornecido
-    const selectedCityObj = cities.find(c => c.name === eventData.city) || cities[0];
+    // Encontrar a cidade correspondente ao nome fornecido ou usar os dados manuais
+    const selectedCityObj = cities.find(c => c.name === eventData.city);
     
     // Criar novo evento
     const newEvent = {
-      id: (events.length + localEvents.length + 1).toString(),
+      id: editingEvent ? editingEvent.id : (events.length + localEvents.length + 1).toString(),
       title: eventData.title || "Novo Evento",
       organizer_name: eventData.organizer || "Organizador",
       category: eventData.category || "Outro",
-      city_id: selectedCityObj.id,
-      city_name: selectedCityObj.name,
+      city_id: selectedCityObj ? selectedCityObj.id : "custom",
+      city_name: eventData.city || (selectedCityObj ? selectedCityObj.name : "Cidade não informada"),
       date: eventData.date || new Date().toISOString(),
       price: eventData.lotes && eventData.lotes.length > 0 ? parseFloat(eventData.lotes[0].price) || 0 : 0,
-      tickets_sold: 0,
+      tickets_sold: editingEvent ? editingEvent.tickets_sold : 0,
       tickets_total: eventData.lotes && eventData.lotes.length > 0 ? parseInt(eventData.lotes[0].quantity) || 1000 : 1000,
       status: status,
       image: eventData.coverImage || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=60",
-      latitude: selectedCityObj.latitude,
-      longitude: selectedCityObj.longitude
+      latitude: selectedCityObj ? selectedCityObj.latitude : -8.0539, // Default to Recife if not found (near Itamaracá)
+      longitude: selectedCityObj ? selectedCityObj.longitude : -34.8808,
+      // Preservar campos extras para edição
+      startTime: eventData.startTime,
+      endTime: eventData.endTime,
+      gateTime: eventData.gateTime,
+      censorship: eventData.censorship,
+      locationName: eventData.locationName,
+      address: eventData.address,
+      state: eventData.state,
+      lotes: eventData.lotes,
+      selectedTickets: eventData.selectedTickets,
+      bannerImage: eventData.bannerImage
     };
     
     // Se está editando um evento existente, atualizar o evento local
     if (editingEvent) {
       const updatedEvents = localEvents.map(event => event.id === editingEvent.id ? { ...newEvent, id: editingEvent.id } : event);
       setLocalEvents(updatedEvents);
-      alert("Evento '" + newEvent.title + "' atualizado com sucesso!");
+      toast.success(`Evento '${newEvent.title}' atualizado com sucesso!`);
     } else {
       // Adicionar novo evento à lista local
       const newEvents = [...localEvents, newEvent];
       setLocalEvents(newEvents);
-      alert("Evento '" + newEvent.title + "' criado como " + (status === "draft" ? "rascunho" : "publicado") + " com sucesso!");
+      toast.success(`Evento '${newEvent.title}' criado como ${status === "draft" ? "rascunho" : "publicado"} com sucesso!`);
     }
     
     setIsModalOpen(false);
@@ -77,6 +106,34 @@ export default function EventsPage() {
   const handleEditEvent = (event: any) => {
     setEditingEvent(event);
     setIsModalOpen(true);
+  };
+
+  const handleToggleVisibility = (eventId: string, eventTitle: string) => {
+    setHiddenEventIds(prev => {
+      const isCurrentlyHidden = prev.includes(eventId);
+      if (isCurrentlyHidden) {
+        toast.success(`Evento '${eventTitle}' agora está visível para os usuários.`);
+        return prev.filter(id => id !== eventId);
+      } else {
+        toast.info(`Evento '${eventTitle}' agora está oculto para os usuários.`);
+        return [...prev, eventId];
+      }
+    });
+  };
+
+  const handleToggleAllVisibility = () => {
+    const allEventIds = [...events, ...localEvents].map(e => e.id);
+    const areAllHidden = allEventIds.every(id => hiddenEventIds.includes(id));
+
+    if (areAllHidden) {
+      // Se todos estão ocultos, tornar todos visíveis
+      setHiddenEventIds([]);
+      toast.success("Todos os eventos agora estão visíveis para os usuários.");
+    } else {
+      // Se algum está visível, ocultar todos
+      setHiddenEventIds(allEventIds);
+      toast.info("Todos os eventos foram ocultos para os usuários.");
+    }
   };
 
   const handleCloseModal = () => {
@@ -91,8 +148,11 @@ export default function EventsPage() {
 
   const categories = Array.from(new Set(events.map((e) => e.category)));
 
-  // Combinar eventos estáticos com eventos criados localmente
-  const allEvents = [...events, ...localEvents];
+  // Combinar eventos estáticos com eventos criados localmente e aplicar estado de visibilidade
+  const allEvents = [...events, ...localEvents].map(event => ({
+    ...event,
+    isHidden: hiddenEventIds.includes(event.id)
+  }));
   
   const filteredEvents = allEvents.filter((event) => {
     if (selectedCity !== "all" && event.city_id !== selectedCity) return false;
@@ -230,7 +290,24 @@ export default function EventsPage() {
                   <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Ingressos</th>
                   <th className="text-left p-4 text-sm font-medium text-muted-foreground">Preço</th>
                   <th className="text-left p-4 text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="text-right p-4 text-sm font-medium text-muted-foreground">Ações</th>
+                  <th className="text-right p-4 text-sm font-medium text-muted-foreground">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 px-2 text-xs gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        onClick={handleToggleAllVisibility}
+                        title={hiddenEventIds.length === [...events, ...localEvents].length ? "Exibir todos os eventos" : "Ocultar todos os eventos"}
+                      >
+                        {hiddenEventIds.length === [...events, ...localEvents].length ? (
+                          <><Eye className="w-3.5 h-3.5" /> Exibir Todos</>
+                        ) : (
+                          <><EyeOff className="w-3.5 h-3.5" /> Ocultar Todos</>
+                        )}
+                      </Button>
+                      <span>Ações</span>
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -298,8 +375,14 @@ export default function EventsPage() {
                       <td className="p-4">
                         <div className="flex items-center justify-end gap-1">
 
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                            <Eye className="w-4 h-4" />
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className={`h-8 w-8 rounded-lg ${event.isHidden ? "text-muted-foreground" : "text-blue-600"}`}
+                            onClick={() => handleToggleVisibility(event.id, event.title)}
+                            title={event.isHidden ? "Exibir Evento" : "Ocultar Evento"}
+                          >
+                            {event.isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </Button>
                           <Button 
                             variant="ghost" 

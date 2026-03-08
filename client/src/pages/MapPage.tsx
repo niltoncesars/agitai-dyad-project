@@ -65,6 +65,7 @@ export default function MapPage() {
   const [activeTab, setActiveTab] = useState<"reviews" | "info">("info");
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number; cityName: string } | null>(null);
   const [localStorageEvents, setLocalStorageEvents] = useState<any[]>([]);
+  const [hiddenEventIds, setHiddenEventIds] = useState<string[]>([]);
   
   const mapRef = useRef<any>(null);
   const markersRef = useRef<L.Marker[]>([]);
@@ -125,23 +126,39 @@ export default function MapPage() {
     } catch {}
   }, []);
 
-  // Carregar eventos do localStorage
-  useEffect(() => {
+  const loadEventsAndVisibility = () => {
+    // Carregar eventos locais
     const savedEvents = localStorage.getItem('agitai_events');
     if (savedEvents) {
       try {
         const parsed = JSON.parse(savedEvents);
-        // Filtrar apenas eventos publicados
         const publishedEvents = parsed.filter((e: any) => e.status === 'published');
         setLocalStorageEvents(publishedEvents);
       } catch (error) {
         console.error('Erro ao carregar eventos do localStorage:', error);
       }
     }
+
+    // Carregar IDs ocultos
+    const savedHiddenIds = localStorage.getItem('agitai_hidden_events');
+    if (savedHiddenIds) {
+      try {
+        setHiddenEventIds(JSON.parse(savedHiddenIds));
+      } catch (error) {
+        console.error('Erro ao carregar IDs ocultos do localStorage:', error);
+      }
+    }
+  };
+
+  // Carregar dados ao montar e quando houver atualizações
+  useEffect(() => {
+    loadEventsAndVisibility();
+    window.addEventListener("visibility_updated", loadEventsAndVisibility);
+    return () => window.removeEventListener("visibility_updated", loadEventsAndVisibility);
   }, []);
 
-  // Combinar eventos estáticos com eventos do localStorage
-  const allEvents = [...events, ...localStorageEvents];
+  // Combinar eventos estáticos com eventos do localStorage e filtrar ocultos
+  const allEvents = [...events, ...localStorageEvents].filter(event => !hiddenEventIds.includes(event.id));
 
   const filteredEvents = allEvents.filter((event) => {
     if (selectedCity !== "all" && selectedCity !== "current" && event.city_id !== selectedCity) return false;

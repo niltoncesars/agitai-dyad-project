@@ -92,34 +92,89 @@ const eventCategories = [
 
 const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onClose, onSubmit, editingEvent }) => {
   const [formData, setFormData] = useState({
-    title: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-    gateTime: "",
-    censorship: "",
-    category: "",
-    organizer: "",
-    locationName: "",
-    city: "",
-    state: "",
-    address: "",
-    tickets: [],
+    title: editingEvent?.title || "",
+    date: editingEvent?.date ? new Date(editingEvent.date).toISOString().split('T')[0] : "",
+    startTime: editingEvent?.startTime || "",
+    endTime: editingEvent?.endTime || "",
+    gateTime: editingEvent?.gateTime || "",
+    censorship: editingEvent?.censorship || "",
+    category: editingEvent?.category || "",
+    organizer: editingEvent?.organizer_name || editingEvent?.organizer || "",
+    locationName: editingEvent?.locationName || "",
+    city: editingEvent?.city_name || editingEvent?.city || "",
+    state: editingEvent?.state || "",
+    address: editingEvent?.address || "",
+    tickets: editingEvent?.tickets || [],
   });
 
-  const [coverImage, setCoverImage] = useState<string | null>(null);
-  const [bannerImage, setBannerImage] = useState<string | null>(null);
-  const [selectedTickets, setSelectedTickets] = useState<string[]>(["Pista", "Camarote"]);
-  const [lotes, setLotes] = useState<any[]>([
+  const [coverImage, setCoverImage] = useState<string | null>(editingEvent?.image || editingEvent?.coverImage || null);
+  const [bannerImage, setBannerImage] = useState<string | null>(editingEvent?.bannerImage || null);
+  const [selectedTickets, setSelectedTickets] = useState<string[]>(editingEvent?.selectedTickets || ["Pista", "Camarote"]);
+  const [lotes, setLotes] = useState<any[]>(editingEvent?.lotes || [
     {
       id: 1,
       ticketType: "Pista",
       quantity: "",
-      price: "",
+      price: editingEvent?.price?.toString() || "",
       startDate: "",
       endDate: "",
     },
   ]);
+
+  // Update form data when editingEvent changes
+  React.useEffect(() => {
+    if (editingEvent) {
+      setFormData({
+        title: editingEvent.title || "",
+        date: editingEvent.date ? new Date(editingEvent.date).toISOString().split('T')[0] : "",
+        startTime: editingEvent.startTime || "",
+        endTime: editingEvent.endTime || "",
+        gateTime: editingEvent.gateTime || "",
+        censorship: editingEvent.censorship || "",
+        category: editingEvent.category || "",
+        organizer: editingEvent.organizer_name || editingEvent.organizer || "",
+        locationName: editingEvent.locationName || "",
+        city: editingEvent.city_name || editingEvent.city || "",
+        state: editingEvent.state || "",
+        address: editingEvent.address || "",
+        tickets: editingEvent.tickets || [],
+      });
+      setCoverImage(editingEvent.image || editingEvent.coverImage || null);
+      setBannerImage(editingEvent.bannerImage || null);
+      setSelectedTickets(editingEvent.selectedTickets || ["Pista", "Camarote"]);
+      setLotes(editingEvent.lotes || [
+        {
+          id: 1,
+          ticketType: "Pista",
+          quantity: "",
+          price: editingEvent.price?.toString() || "",
+          startDate: "",
+          endDate: "",
+        },
+      ]);
+    } else {
+      // Reset form when not editing
+      setFormData({
+        title: "",
+        date: "",
+        startTime: "",
+        endTime: "",
+        gateTime: "",
+        censorship: "",
+        category: "",
+        organizer: "",
+        locationName: "",
+        city: "",
+        state: "",
+        address: "",
+        tickets: [],
+      });
+      setCoverImage(null);
+      setBannerImage(null);
+      setSelectedTickets(["Pista", "Camarote"]);
+      setLotes([{ id: 1, ticketType: "Pista", quantity: "", price: "", startDate: "", endDate: "" }]);
+    }
+  }, [editingEvent]);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -529,7 +584,7 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
               onClick={() => onSubmit({ ...formData, coverImage, bannerImage, selectedTickets, lotes, isDraft: true })}
               className="flex-1 bg-white border-2 border-indigo-100 text-[#5b2ef7] font-bold py-3.5 rounded-[12px] hover:border-indigo-300 hover:bg-indigo-50 transition-all"
             >
-              Salvar nos Rascunhos
+              Salvar Rascunho
             </button>
             <button 
               onClick={handleFormSubmit}

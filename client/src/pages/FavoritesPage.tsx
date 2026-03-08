@@ -47,7 +47,22 @@ export default function FavoritesPage() {
     return () => window.removeEventListener("favorites_updated", loadFavorites);
   }, []);
 
-  const favoriteEvents = events.filter((event) => 
+  const [localEvents, setLocalEvents] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const savedEvents = localStorage.getItem('agitai_events');
+    if (savedEvents) {
+      try {
+        setLocalEvents(JSON.parse(savedEvents));
+      } catch (error) {
+        console.error('Erro ao carregar eventos do localStorage:', error);
+      }
+    }
+  }, []);
+
+  const allEvents = [...events, ...localEvents];
+
+  const favoriteEvents = allEvents.filter((event) => 
     favoriteIds.includes(event.id) &&
     (searchQuery === "" || event.title.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -374,17 +389,17 @@ export default function FavoritesPage() {
                   {/* Date */}
                   <div className="event-card-date">
                     <CalendarIcon />
-                    {event.date}
+                    {event.date ? new Date(event.date).toLocaleDateString("pt-BR") : "Data não informada"}
                   </div>
                   
                   {/* City */}
                   <div className="event-card-city">
-                    {event.city_name}
+                    {event.city_name || "Cidade não informada"}
                   </div>
                   
                   {/* Address */}
                   <div className="event-card-address">
-                    {event.address.split(',')[0]}
+                    {event.address ? event.address.split(',')[0] : "Endereço não informado"}
                   </div>
                   
                   {/* Footer */}

@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { getDb } from "./db";
 import { stripeCustomers, ticketPurchases, InsertTicketPurchase } from "../drizzle/schema";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 /**
  * Get or create a Stripe customer for a user
@@ -23,6 +23,7 @@ export async function getOrCreateStripeCustomer(userId: number, email: string, n
     return existing[0].stripeCustomerId;
   }
 
+  if (!stripe) throw new Error("Stripe is not configured");
   // Create new Stripe customer
   const customer = await stripe.customers.create({
     email,
@@ -57,6 +58,7 @@ export async function createTicketCheckoutSession(
   // Get or create Stripe customer
   const stripeCustomerId = await getOrCreateStripeCustomer(userId, userEmail, userName || undefined);
 
+  if (!stripe) throw new Error("Stripe is not configured");
   // Create checkout session
   const session = await stripe.checkout.sessions.create({
     customer: stripeCustomerId,
