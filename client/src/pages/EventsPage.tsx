@@ -12,29 +12,42 @@ import DashboardLayout from "@/components/DashboardLayout";
 export default function EventsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [localEvents, setLocalEvents] = useState<any[]>([]);
 
   const handleCreateEvent = (eventData: any) => {
     console.log("Novo evento a ser criado:", eventData);
-    // Simulação de criação de evento
+    
+    // Determinar o status baseado no isDraft
+    const status = eventData.isDraft ? "draft" : "published";
+    
+    // Criar novo evento
     const newEvent = {
-      id: (events.length + 1).toString(),
+      id: (events.length + localEvents.length + 1).toString(),
       title: eventData.title || "Novo Evento",
       organizer_name: eventData.organizer || "Organizador",
       category: eventData.category || "Outro",
       city_id: "1", // Mock city id
       city_name: eventData.city || "São Paulo",
       date: eventData.date || new Date().toISOString(),
-      price: 0,
+      price: eventData.lotes && eventData.lotes.length > 0 ? parseFloat(eventData.lotes[0].price) || 0 : 0,
       tickets_sold: 0,
-      tickets_total: 1000,
-      status: "draft",
-      image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=60"
+      tickets_total: eventData.lotes && eventData.lotes.length > 0 ? parseInt(eventData.lotes[0].quantity) || 1000 : 1000,
+      status: status,
+      image: eventData.coverImage || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&auto=format&fit=crop&q=60"
     };
     
-    // Como estamos usando mock-data estático, não podemos dar push diretamente no array importado
-    // Em um cenário real, isso seria uma chamada de API e atualização de estado global ou local
-    console.log("Evento simulado:", newEvent);
-    alert("Evento '" + newEvent.title + "' criado como rascunho com sucesso!");
+    // Se está editando um evento existente, atualizar o evento local
+    if (editingEvent) {
+      setLocalEvents(prevEvents =>
+        prevEvents.map(event => event.id === editingEvent.id ? { ...newEvent, id: editingEvent.id } : event)
+      );
+      alert("Evento '" + newEvent.title + "' atualizado com sucesso!");
+    } else {
+      // Adicionar novo evento à lista local
+      setLocalEvents(prevEvents => [...prevEvents, newEvent]);
+      alert("Evento '" + newEvent.title + "' criado como " + (status === "draft" ? "rascunho" : "publicado") + " com sucesso!");
+    }
+    
     setIsModalOpen(false);
     setEditingEvent(null);
   };
@@ -56,7 +69,10 @@ export default function EventsPage() {
 
   const categories = Array.from(new Set(events.map((e) => e.category)));
 
-  const filteredEvents = events.filter((event) => {
+  // Combinar eventos estáticos com eventos criados localmente
+  const allEvents = [...events, ...localEvents];
+  
+  const filteredEvents = allEvents.filter((event) => {
     if (selectedCity !== "all" && event.city_id !== selectedCity) return false;
     if (selectedCategory !== "all" && event.category !== selectedCategory) return false;
     if (selectedStatus !== "all" && event.status !== selectedStatus) return false;
