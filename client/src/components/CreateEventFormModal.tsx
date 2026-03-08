@@ -103,11 +103,22 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
     city: "",
     state: "",
     address: "",
+    tickets: [],
   });
 
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [bannerImage, setBannerImage] = useState<string | null>(null);
   const [selectedTickets, setSelectedTickets] = useState<string[]>(["Pista", "Camarote"]);
+  const [lotes, setLotes] = useState<any[]>([
+    {
+      id: 1,
+      ticketType: "Pista",
+      quantity: "",
+      price: "",
+      startDate: "",
+      endDate: "",
+    },
+  ]);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -124,7 +135,8 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
       ...formData,
       coverImage,
       bannerImage,
-      selectedTickets
+      selectedTickets,
+      lotes,
     });
   };
 
@@ -141,9 +153,45 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
   };
 
   const toggleTicket = (type: string) => {
-    setSelectedTickets(prev => 
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    setSelectedTickets(prev => {
+      const newSelectedTickets = prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type];
+      // Update lotes to reflect changes in selected ticket types
+      setLotes(prevLotes =>
+        prevLotes.map(lote => {
+          if (!newSelectedTickets.includes(lote.ticketType)) {
+            // If the previously selected ticket type for this lote is no longer active, default to the first active ticket type
+            return { ...lote, ticketType: newSelectedTickets[0] || "" };
+          }
+          return lote;
+        })
+      );
+      return newSelectedTickets;
+    });
+  };
+
+  const handleLoteChange = (id: number, field: string, value: string) => {
+    setLotes(prevLotes =>
+      prevLotes.map(lote => (lote.id === id ? { ...lote, [field]: value } : lote))
     );
+  };
+
+  const addLote = () => {
+    const newId = lotes.length > 0 ? Math.max(...lotes.map(lote => lote.id)) + 1 : 1;
+    setLotes(prevLotes => [
+      ...prevLotes,
+      {
+        id: newId,
+        ticketType: selectedTickets[0] || "", // Default to the first selected ticket type
+        quantity: "",
+        price: "",
+        startDate: "",
+        endDate: "",
+      },
+    ]);
+  };
+
+  const removeLote = (id: number) => {
+    setLotes(prevLotes => prevLotes.filter(lote => lote.id !== id));
   };
 
   return (
@@ -247,6 +295,124 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
                   </>
                 )}
               </div>
+            </div>
+          </section>
+
+          {/* Tickets Section */}
+          <section>
+            <div className="flex items-center gap-2.5 mb-4 text-[11px] font-bold tracking-[2px] text-[#5b2ef7] uppercase font-syne after:content-[\'\'] after:flex-1 after:h-[1.5px] after:bg-gradient-to-r after:from-indigo-100 after:to-transparent">
+              Ingressos & Lotes
+            </div>
+            <div className="bg-white rounded-[12px] border border-indigo-100 p-6 shadow-sm">
+              <div className="mb-5">
+                <label className="block text-xs font-semibold text-[#5a5478] mb-1.5">
+                  Tipos de Ingresso <span className="text-[#e8005a]">*</span>
+                </label>
+                <div className="flex flex-wrap gap-2" id="ticketTypes">
+                  {["Pista", "Camarote", "VIP", "Backstage"].map((type) => (
+                    <label
+                      key={type}
+                      className={`flex items-center gap-2 px-3.5 py-2 rounded-full border border-indigo-100 bg-indigo-50/30 cursor-pointer text-sm font-medium transition-all select-none ${selectedTickets.includes(type) ? "border-[#5b2ef7] bg-[#5b2ef7]/10 text-[#5b2ef7] font-semibold" : "text-[#8b86a8]"}`}
+                      onClick={() => toggleTicket(type)}
+                    >
+                      <input type="checkbox" className="hidden" checked={selectedTickets.includes(type)} readOnly />
+                      <span className={`w-1.5 h-1.5 rounded-full ${selectedTickets.includes(type) ? "bg-[#5b2ef7]" : "bg-[#ccc]"}`}></span>
+                      {type}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-[1.5px] bg-indigo-100 my-5"></div>
+
+              <div className="space-y-5" id="lotesList">
+                {lotes.map((lote, loteIndex) => (
+                  <div key={lote.id} className="bg-[#f8f7ff] rounded-[12px] border border-indigo-100 p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="flex items-center gap-2 text-base font-bold text-[#1a1530]">
+                        <span className="w-6 h-6 rounded-full bg-[#5b2ef7] text-white flex items-center justify-center text-xs font-bold">{loteIndex + 1}</span>
+                        {loteIndex + 1}º Lote
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeLote(lote.id)}
+                        className="w-8 h-8 rounded-full bg-red-50/50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {selectedTickets.map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          className={`px-3.5 py-2 rounded-full text-sm font-medium transition-all ${lote.ticketType === type ? "bg-[#5b2ef7] text-white" : "bg-indigo-50/30 text-[#5b2ef7] hover:bg-[#5b2ef7]/20"}`}
+                          onClick={() => handleLoteChange(lote.id, "ticketType", type)}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="block text-xs font-semibold text-[#5a5478]">Quantidade de Ingressos <span className="text-[#e8005a]">*</span></label>
+                        <input
+                          type="number"
+                          placeholder="Quantidade de Ingressos"
+                          min="1"
+                          value={lote.quantity}
+                          onChange={(e) => handleLoteChange(lote.id, "quantity", e.target.value)}
+                          className="bg-[#f8f7ff] border border-indigo-100 rounded-md px-3 py-2 text-sm text-[#1a1530] focus:outline-none focus:ring-2 focus:ring-[#5b2ef7] focus:border-transparent"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="block text-xs font-semibold text-[#5a5478]">Valor <span className="text-[#e8005a]">*</span></label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-[#8b86a8] text-sm">R$</span>
+                          <input
+                            type="number"
+                            placeholder="0,00"
+                            min="0"
+                            step="0.01"
+                            value={lote.price}
+                            onChange={(e) => handleLoteChange(lote.id, "price", e.target.value)}
+                            className="pl-9 bg-[#f8f7ff] border border-indigo-100 rounded-md px-3 py-2 text-sm text-[#1a1530] focus:outline-none focus:ring-2 focus:ring-[#5b2ef7] focus:border-transparent w-full"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="block text-xs font-semibold text-[#5a5478]">Início do Lote <span className="text-[#e8005a]">*</span></label>
+                        <input
+                          type="datetime-local"
+                          value={lote.startDate}
+                          onChange={(e) => handleLoteChange(lote.id, "startDate", e.target.value)}
+                          className="bg-[#f8f7ff] border border-indigo-100 rounded-md px-3 py-2 text-sm text-[#1a1530] focus:outline-none focus:ring-2 focus:ring-[#5b2ef7] focus:border-transparent"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="block text-xs font-semibold text-[#5a5478]">Fim do Lote <span className="text-[#e8005a]">*</span></label>
+                        <input
+                          type="datetime-local"
+                          value={lote.endDate}
+                          onChange={(e) => handleLoteChange(lote.id, "endDate", e.target.value)}
+                          className="bg-[#f8f7ff] border border-indigo-100 rounded-md px-3 py-2 text-sm text-[#1a1530] focus:outline-none focus:ring-2 focus:ring-[#5b2ef7] focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={addLote}
+                className="mt-5 w-full py-3 rounded-xl border border-indigo-100 bg-white text-[#5a5478] font-medium flex items-center justify-center gap-2 hover:border-indigo-300 hover:text-[#5b2ef7] hover:shadow-sm transition-all"
+              >
+                <Plus className="w-5 h-5" />
+                Adicionar Lote
+              </button>
             </div>
           </section>
 
