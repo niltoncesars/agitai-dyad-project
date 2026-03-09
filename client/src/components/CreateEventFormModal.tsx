@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from "react";
-import { ArrowLeft, Upload, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, Plus, XCircle } from "lucide-react";
 
 interface CreateEventFormModalProps {
   isOpen: boolean;
@@ -591,6 +591,16 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
               className="flex-1 bg-[#5b2ef7] text-white font-bold py-3.5 rounded-[12px] hover:bg-indigo-700 transition-all shadow-[0_4px_20px_rgba(91,46,247,0.25)]"
             >
               {editingEvent ? "Atualizar Evento" : "Publicar Evento"}
+            </button>
+          </div>
+          
+          <div className="mt-6 pt-6 border-t border-indigo-100">
+            <button 
+              onClick={onClose}
+              className="w-full bg-red-50 border border-red-200 text-red-600 font-bold py-3.5 rounded-[12px] hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+            >
+              <XCircle size={20} />
+              Cancelar Evento
             </button>
           </div>
         </div>
