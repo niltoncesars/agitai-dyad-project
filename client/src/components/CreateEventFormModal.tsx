@@ -578,38 +578,31 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
         </div>
 
         {/* Footer */}
-        <div className="p-        <div className="p-6 sticky bottom-0 bg-[#f4f2ff] z-10 rounded-b-[24px] border-t border-indigo-100">
+        <div className="p-6 sticky bottom-0 bg-[#f4f2ff] z-10 rounded-b-[24px] border-t border-indigo-100">
           <div className="flex flex-col">
-            <div className="flex flex-col gap-[10px]">
-                <button 
-                  onClick={() => onSubmit({ ...formData, coverImage, bannerImage, selectedTickets, lotes, isDraft: true })}
-                  className="w-full bg-white border-2 border-indigo-100 text-[#5b2ef7] font-bold py-3.5 rounded-[12px] hover:border-indigo-300 hover:bg-indigo-50 transition-all"
-                >
-                  Salvar Rascunho
-                </button>
-                <button 
-                  onClick={handleFormSubmit}
-                  className="w-full bg-[#5b2ef7] text-white font-bold py-3.5 rounded-[12px] hover:bg-indigo-700 transition-all shadow-[0_4px_20px_rgba(91,46,247,0.25)]"
-                >
-                  {editingEvent ? "Atualizar Evento" : "Publicar Evento"}
-                </button>
-            </div>
+            <button 
+              onClick={() => onSubmit({ ...formData, coverImage, bannerImage, selectedTickets, lotes, isDraft: true })}
+              className="w-full bg-white border-2 border-indigo-100 text-[#5b2ef7] font-bold py-3.5 rounded-[12px] hover:border-indigo-300 hover:bg-indigo-50 transition-all mb-[10px]"
+            >
+              Salvar Rascunho
+            </button>
+            <button 
+              onClick={handleFormSubmit}
+              className="w-full bg-[#5b2ef7] text-white font-bold py-3.5 rounded-[12px] hover:bg-indigo-700 transition-all shadow-[0_4px_20px_rgba(91,46,247,0.25)] mb-[10px]"
+            >
+              {editingEvent ? "Atualizar Evento" : "Publicar Evento"}
+            </button>
             
-            <div className="mt-[10px]">
-                <div style={{ marginTop: '2px', marginBottom: '2px', height: '1.5px' }} className="bg-indigo-100"></div>
-            </div>
+            <div style={{ marginTop: '2px', marginBottom: '2px', height: '1.5px' }} className="bg-indigo-100 w-full mb-[10px]"></div>
 
-            <div className="mt-[10px]">
-                <button 
-                  onClick={onClose}
-                  className="w-full bg-red-50 border border-red-200 text-red-600 font-bold py-3.5 rounded-[12px] hover:bg-red-100 transition-all flex items-center justify-center gap-2"
-                >
-                  <XCircle size={20} />
-                  Cancelar Evento
-                </button>
-            </div>
+            <button 
+              onClick={onClose}
+              className="w-full bg-red-50 border border-red-200 text-red-600 font-bold py-3.5 rounded-[12px] hover:bg-red-100 transition-all flex items-center justify-center gap-2"
+            >
+              <XCircle size={20} />
+              Cancelar Evento
+            </button>
           </div>
-        </div> </div>
         </div>
 
       </div>
