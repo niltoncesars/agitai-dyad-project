@@ -1,5 +1,6 @@
 
 import React, { useState, useRef } from "react";
+import { isValidDate } from "../lib/date-utils";
 import { ArrowLeft, Upload, Trash2, Plus, XCircle } from "lucide-react";
 
 interface CreateEventFormModalProps {
@@ -98,7 +99,7 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
     endTime: editingEvent?.endTime || "",
     gateTime: editingEvent?.gateTime || "",
     censorship: editingEvent?.censorship || "",
-    category: editingEvent?.category || "",
+    categories: Array.isArray(editingEvent?.categories) ? editingEvent.categories : (editingEvent?.category ? [editingEvent.category] : []),
     organizer: editingEvent?.organizer_name || editingEvent?.organizer || "",
     locationName: editingEvent?.locationName || "",
     city: editingEvent?.city_name || editingEvent?.city || "",
@@ -131,7 +132,7 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
         endTime: editingEvent.endTime || "",
         gateTime: editingEvent.gateTime || "",
         censorship: editingEvent.censorship || "",
-        category: editingEvent.category || "",
+        categories: Array.isArray(editingEvent.categories) ? editingEvent.categories : (editingEvent.category ? [editingEvent.category] : []),
         organizer: editingEvent.organizer_name || editingEvent.organizer || "",
         locationName: editingEvent.locationName || "",
         city: editingEvent.city_name || editingEvent.city || "",
@@ -161,7 +162,7 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
         endTime: "",
         gateTime: "",
         censorship: "",
-        category: "",
+        categories: [],
         organizer: "",
         locationName: "",
         city: "",
@@ -186,7 +187,36 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (!value) return;
+
+    setFormData(prev => {
+      const currentCategories = prev.categories || [];
+      if (currentCategories.includes(value)) {
+        return { ...prev, categories: currentCategories.filter(c => c !== value) };
+      }
+      if (currentCategories.length < 2) {
+        return { ...prev, categories: [...currentCategories, value] };
+      }
+      return prev;
+    });
+  };
+
+  const removeCategory = (catToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      categories: (prev.categories || []).filter(c => c !== catToRemove)
+    }));
+  };
+
   const handleFormSubmit = () => {
+    // Validação básica de data
+    if (!formData.date || !isValidDate(formData.date)) {
+      alert("Por favor, informe uma data válida para o evento.");
+      return;
+    }
+
     onSubmit({
       ...formData,
       coverImage,
@@ -402,19 +432,40 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-semibold text-[#5a5478]">Estilo do Evento <span className="text-pink-500">*</span></label>
-                <select name="category" value={formData.category} onChange={handleInputChange} placeholder="Estilo do Evento" className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]">
-                    <option value="">Selecione a categoria</option>
-                    {eventCategories.map((cat) => (
-                      <optgroup key={cat.label} label={cat.label} className="event-category-optgroup">
-                        {cat.options.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
+                  <label className="text-[12px] font-semibold text-[#5a5478]">Estilo do Evento (Até 2) <span className="text-pink-500">*</span></label>
+                  <div className="space-y-2">
+                    <select 
+                      name="category" 
+                      value="" 
+                      onChange={handleCategoryChange} 
+                      className="w-full bg-[#f8f7ff] border border-indigo-50 rounded-[8px] px-4 py-2.5 text-[14px] outline-none focus:border-indigo-500 focus:bg-white transition-all appearance-none bg-[url(\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%238b86a8%22 stroke-width=%222%22%3E%3Cpath d=%22M6 9l6 6 6-6%22/%3E%3C/svg%3E\')] bg-no-repeat bg-[position:right_12px_center]"
+                      disabled={formData.categories?.length >= 2}
+                    >
+                      <option value="">{formData.categories?.length >= 2 ? "Limite de 2 categorias atingido" : "Selecione até 2 categorias"}</option>
+                      {eventCategories.map((cat) => (
+                        <optgroup key={cat.label} label={cat.label} className="event-category-optgroup">
+                          {cat.options.map((opt) => (
+                            <option key={opt} value={opt} disabled={formData.categories?.includes(opt)}>
+                              {opt}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                    
+                    {formData.categories && formData.categories.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {formData.categories.map((cat: string) => (
+                          <span key={cat} className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full border border-indigo-200">
+                            {cat}
+                            <button type="button" onClick={() => removeCategory(cat)} className="hover:text-indigo-900">
+                              <XCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </span>
                         ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[12px] font-semibold text-[#5a5478]">Organização <span className="text-pink-500">*</span></label>

@@ -15,6 +15,7 @@ import { EventRatingSummary } from "@/components/EventRatingSummary";
 import { EventReviews, ReviewStats } from "@/components/EventReviews";
 import { TenantSection } from "@/components/TenantSection";
 import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
+import { formatFullDisplayDate } from "@/lib/date-utils";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -23,21 +24,9 @@ import L from "leaflet";
 
 const SETTINGS_KEY = "agitai_notification_settings";
 
-// Função para formatar a data no formato desejado
+// Função para formatar a data no formato desejado (agora usa o utilitário centralizado)
 function formatEventDate(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    const days = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    
-    const dayName = days[date.getDay()];
-    const dayNum = date.getDate();
-    const monthName = months[date.getMonth()];
-    
-    return `${dayName}, ${dayNum} de ${monthName}`;
-  } catch (error) {
-    return 'Data não informada';
-  }
+  return formatFullDisplayDate(dateString);
 }
 
 interface FavoriteLocation {
@@ -187,13 +176,14 @@ export default function MapPage() {
       if (distance > 50) return false;
     }
     if (selectedSubcategories.length > 0) {
-      // Verifica se a categoria ou subcategoria do evento está entre as selecionadas
-      // Nota: Como o mock-data usa nomes de categorias, vamos comparar com os nomes das subcategorias
+      // Verifica se alguma das categorias do evento está entre as selecionadas
+      const eventCategories = Array.isArray(event.categories) ? event.categories : [event.category];
+      
       const hasMatch = selectedSubcategories.some(subId => {
         // Encontrar o nome da subcategoria pelo ID
         for (const cat of CATEGORIES) {
           const sub = cat.subcategories.find(s => s.id === subId);
-          if (sub && (event.category === sub.name || event.category === cat.name)) return true;
+          if (sub && eventCategories.some(ecat => ecat === sub.name || ecat === cat.name)) return true;
         }
         return false;
       });
@@ -565,10 +555,12 @@ export default function MapPage() {
                           <div className="text-[10px] font-semibold text-red-500 mt-1 flex items-center gap-1">
                             📅 {formatEventDate(event.date)}
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="secondary" className={`rounded-full text-[10px] px-1.5 h-4 ${isInRange ? "bg-blue-200 text-blue-800" : ""}`}>
-                              {event.category}
-                            </Badge>
+                          <div className="flex items-center flex-wrap gap-1.5 mt-1">
+                            {(Array.isArray(event.categories) ? event.categories : [event.category]).map((cat: string) => (
+                              <Badge key={cat} variant="secondary" className={`rounded-full text-[9px] px-1.5 h-4 ${isInRange ? "bg-blue-200 text-blue-800" : ""}`}>
+                                {cat}
+                              </Badge>
+                            ))}
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <MapPin className="w-2 h-2" />
                               {event.city_name}
@@ -649,8 +641,10 @@ export default function MapPage() {
               <div className="lg:col-span-2 space-y-4">
                 {/* Title and Category */}
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge className="bg-blue-600 hover:bg-blue-700">{selectedEvent.category}</Badge>
+                  <div className="flex items-center flex-wrap gap-2 mb-2">
+                    {(Array.isArray(selectedEvent.categories) ? selectedEvent.categories : [selectedEvent.category]).map((cat: string) => (
+                      <Badge key={cat} className="bg-blue-600 hover:bg-blue-700">{cat}</Badge>
+                    ))}
                     {isEventInRange(selectedEvent) && <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">Proximo</Badge>}
                   </div>
                   <h2 className="text-2xl font-bold mb-3">{selectedEvent.title}</h2>
@@ -737,7 +731,7 @@ export default function MapPage() {
                         <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div>
                           <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Data e Horário</p>
-                          <p className="text-sm font-medium">{selectedEvent.date}</p>
+                          <p className="text-sm font-medium">{formatEventDate(selectedEvent.date)}</p>
                           <p className="text-sm text-muted-foreground">{selectedEvent.time} - {selectedEvent.endTime}</p>
                         </div>
                       </div>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { events, cities, formatCurrency } from "@/lib/mock-data";
+import { formatDisplayDate } from "@/lib/date-utils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { toast } from "sonner";
 
@@ -63,7 +64,8 @@ export default function EventsPage() {
       id: editingEvent ? editingEvent.id : (events.length + localEvents.length + 1).toString(),
       title: eventData.title || "Novo Evento",
       organizer_name: eventData.organizer || "Organizador",
-      category: eventData.category || "Outro",
+      categories: Array.isArray(eventData.categories) ? eventData.categories : (eventData.category ? [eventData.category] : ["Outro"]),
+      category: Array.isArray(eventData.categories) && eventData.categories.length > 0 ? eventData.categories[0] : (eventData.category || "Outro"),
       city_id: selectedCityObj ? selectedCityObj.id : "custom",
       city_name: eventData.city || (selectedCityObj ? selectedCityObj.name : "Cidade não informada"),
       date: eventData.date || new Date().toISOString(),
@@ -156,7 +158,13 @@ export default function EventsPage() {
   
   const filteredEvents = allEvents.filter((event) => {
     if (selectedCity !== "all" && event.city_id !== selectedCity) return false;
-    if (selectedCategory !== "all" && event.category !== selectedCategory) return false;
+    
+    // Filtro de categoria atualizado para verificar ambas as categorias
+    if (selectedCategory !== "all") {
+      const eventCategories = Array.isArray(event.categories) ? event.categories : [event.category];
+      if (!eventCategories.includes(selectedCategory)) return false;
+    }
+    
     if (selectedStatus !== "all" && event.status !== selectedStatus) return false;
     if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
@@ -334,9 +342,13 @@ export default function EventsPage() {
                         </div>
                       </td>
                       <td className="p-4 hidden md:table-cell">
-                        <Badge variant="secondary" className="rounded-full text-xs">
-                          {event.category}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1">
+                          {(Array.isArray(event.categories) ? event.categories : [event.category]).map((cat: string) => (
+                            <Badge key={cat} variant="secondary" className="rounded-full text-[10px] px-2 py-0">
+                              {cat}
+                            </Badge>
+                          ))}
+                        </div>
                       </td>
                       <td className="p-4 hidden lg:table-cell">
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -347,7 +359,7 @@ export default function EventsPage() {
                       <td className="p-4 hidden lg:table-cell">
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Calendar className="w-3 h-3" />
-                          {new Date(event.date).toLocaleDateString("pt-BR")}
+                          {formatDisplayDate(event.date)}
                         </div>
                       </td>
                       <td className="p-4 hidden md:table-cell">
