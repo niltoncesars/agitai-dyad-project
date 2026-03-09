@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info, Heart, Users, Clock, MapPinIcon, Building2, Share2 } from "lucide-react";
+import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info, Heart, Users, Clock, MapPinIcon, Building2, Share2, Filter, X, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CATEGORIES } from "@/lib/constants";
 import { MapView } from "@/components/Map";
 import { BuyTicketModal } from "@/components/BuyTicketModal";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -55,7 +57,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export default function MapPage() {
   const [selectedCity, setSelectedCity] = useState("all");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [mapLoading, setMapLoading] = useState(true);
@@ -166,7 +168,19 @@ export default function MapPage() {
       const distance = calculateDistance(userLocation.latitude, userLocation.longitude, event.latitude, event.longitude);
       if (distance > 50) return false;
     }
-    if (selectedCategory !== "all" && event.category !== selectedCategory) return false;
+    if (selectedSubcategories.length > 0) {
+      // Verifica se a categoria ou subcategoria do evento está entre as selecionadas
+      // Nota: Como o mock-data usa nomes de categorias, vamos comparar com os nomes das subcategorias
+      const hasMatch = selectedSubcategories.some(subId => {
+        // Encontrar o nome da subcategoria pelo ID
+        for (const cat of CATEGORIES) {
+          const sub = cat.subcategories.find(s => s.id === subId);
+          if (sub && (event.category === sub.name || event.category === cat.name)) return true;
+        }
+        return false;
+      });
+      if (!hasMatch) return false;
+    }
     if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
@@ -187,7 +201,26 @@ export default function MapPage() {
     });
   };
 
-  const categories = ["Música", "Tecnologia", "Esportes", "Conferência", "Festival"];
+  const toggleSubcategory = (subId: string) => {
+    setSelectedSubcategories(prev => 
+      prev.includes(subId) 
+        ? prev.filter(id => id !== subId) 
+        : [...prev, subId]
+    );
+  };
+
+  const clearFilters = () => setSelectedSubcategories([]);
+
+  const getSelectedLabels = () => {
+    if (selectedSubcategories.length === 0) return "Categorias";
+    if (selectedSubcategories.length === 1) {
+      for (const cat of CATEGORIES) {
+        const sub = cat.subcategories.find(s => s.id === selectedSubcategories[0]);
+        if (sub) return sub.name;
+      }
+    }
+    return `${selectedSubcategories.length} selecionadas`;
+  };
   const totalEvents = filteredEvents.length;
   const totalRevenue = filteredEvents.reduce((sum, e) => sum + (e.price * e.tickets_sold), 0);
   const eventsInRangeCount = filteredEvents.filter(isEventInRange).length;
@@ -358,15 +391,67 @@ export default function MapPage() {
                 {cities.map((city) => <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Categorias" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {categories.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[200px] justify-between h-10 rounded-xl border-border bg-background px-3 font-normal">
+                  <div className="flex items-center gap-2 truncate">
+                    <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span className="truncate">{getSelectedLabels()}</span>
+                  </div>
+                  {selectedSubcategories.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 px-1 rounded-sm bg-blue-100 text-blue-700 border-none">
+                      {selectedSubcategories.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[320px] p-0 rounded-xl shadow-xl border-border" align="end">
+                <div className="p-3 border-b border-border flex items-center justify-between bg-muted/30">
+                  <span className="text-sm font-semibold">Filtrar por Categoria</span>
+                  {selectedSubcategories.length > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={clearFilters}
+                      className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+                <div className="max-h-[400px] overflow-y-auto p-2 space-y-4">
+                  {CATEGORIES.map((category) => (
+                    <div key={category.id} className="space-y-1.5">
+                      <div className="flex items-center gap-2 px-2 py-1">
+                        <span className="text-sm">{category.emoji}</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          {category.name}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-1">
+                        {category.subcategories.map((sub) => {
+                          const isSelected = selectedSubcategories.includes(sub.id);
+                          return (
+                            <button
+                              key={sub.id}
+                              onClick={() => toggleSubcategory(sub.id)}
+                              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-sm transition-colors ${
+                                isSelected 
+                                  ? "bg-blue-50 text-blue-700 font-medium" 
+                                  : "hover:bg-muted text-foreground"
+                              }`}
+                            >
+                              <span>{sub.name}</span>
+                              {isSelected && <Check className="w-4 h-4" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 

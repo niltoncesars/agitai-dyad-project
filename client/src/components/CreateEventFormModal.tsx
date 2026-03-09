@@ -41,51 +41,51 @@ const brazilianStates = [
 
 const eventCategories = [
   {
-    label: "Música",
-    options: ["Shows", "Festival de música", "Rave / Música eletrônica", "Samba / Pagode", "Rock / Pop"]
+    label: "Música 🎵",
+    options: ["Shows", "Festival", "Rave / Música eletrônica", "Samba / Pagode", "Rock / Pop"]
   },
   {
-    label: "Festas & Vida Noturna",
+    label: "Festas & Vida Noturna 🎉",
     options: ["Balada", "Festa temática", "Open bar", "Festa universitária", "After party"]
   },
   {
-    label: "Humor & Entretenimento",
+    label: "Humor & Entretenimento 😂",
     options: ["Stand-up comedy", "Improviso", "Show de humor", "Podcast ao vivo", "Entretenimento ao vivo"]
   },
   {
-    label: "Arte & Cultura",
+    label: "Arte & Cultura 🎨",
     options: ["Exposições", "Teatro", "Dança", "Literatura", "Cinema / Audiovisual"]
   },
   {
-    label: "Gastronomia",
+    label: "Gastronomia 🍽️",
     options: ["Festival gastronômico", "Degustação", "Vinhos & Drinks", "Cerveja artesanal", "Experiência culinária"]
   },
   {
-    label: "Negócios & Networking",
+    label: "Negócios & Networking 💼",
     options: ["Networking", "Empreendedorismo", "Marketing", "Liderança", "Inovação"]
   },
   {
-    label: "Tecnologia",
+    label: "Tecnologia 💻",
     options: ["Inteligência artificial", "Programação", "Startups", "Desenvolvimento de software", "Hackathon"]
   },
   {
-    label: "Educação",
-    options: ["Cursos", "Workshops", "Treinamentos", "Seminários", "Palestras"]
+    label: "Educação 🎓",
+    options: ["Cursos", "Workshops", "Treinamentos", "Seminários", "Palestras", "Congressos", "Simpósios"]
   },
   {
-    label: "Esportes",
+    label: "Esportes 🏃",
     options: ["Corridas", "Torneios", "Artes marciais", "Fitness", "eSports"]
   },
   {
-    label: "Comunidade & Social",
+    label: "Comunidade & Social 👥",
     options: ["Meetups", "Eventos comunitários", "Eventos religiosos", "Eventos beneficentes", "Grupos de interesse"]
   },
   {
-    label: "Família & Infantil",
+    label: "Família & Infantil 👨‍👩‍👧",
     options: ["Eventos infantis", "Parques / recreação", "Espetáculos infantis", "Oficinas infantis", "Atividades familiares"]
   },
   {
-    label: "Feiras & Experiências",
+    label: "Feiras & Experiências 🛍️",
     options: ["Feiras", "Convenções", "Exposições comerciais", "Lançamentos", "Experiências imersivas"]
   }
 ];
