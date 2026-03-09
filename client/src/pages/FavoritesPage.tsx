@@ -31,6 +31,23 @@ const CalendarIcon = () => (
   </svg>
 );
 
+// Função para formatar a data no formato desejado
+function formatEventDate(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const days = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    const dayName = days[date.getDay()];
+    const dayNum = date.getDate();
+    const monthName = months[date.getMonth()];
+    
+    return `${dayName}, ${dayNum} de ${monthName}`;
+  } catch (error) {
+    return 'Data não informada';
+  }
+}
+
 export default function FavoritesPage() {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -221,6 +238,10 @@ export default function FavoritesPage() {
           margin-bottom: 8px;
           line-height: 1.25;
           font-family: 'VinilaVariable', 'Open Sans', sans-serif;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          max-width: 100%;
         }
 
         .event-card-date {
@@ -389,7 +410,7 @@ export default function FavoritesPage() {
                   {/* Date */}
                   <div className="event-card-date">
                     <CalendarIcon />
-                    {event.date ? new Date(event.date).toLocaleDateString("pt-BR") : "Data não informada"}
+                    {event.date ? formatEventDate(event.date) : "Data não informada"}
                   </div>
                   
                   {/* City */}

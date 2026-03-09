@@ -5,6 +5,23 @@ import { Link } from "wouter";
 import { events, cities, formatCurrency, formatNumber } from "@/lib/mock-data";
 import DashboardLayout from "@/components/DashboardLayout";
 
+// Função para formatar a data no formato desejado
+function formatEventDate(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const days = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    const dayName = days[date.getDay()];
+    const dayNum = date.getDate();
+    const monthName = months[date.getMonth()];
+    
+    return `${dayName}, ${dayNum} de ${monthName}`;
+  } catch (error) {
+    return 'Data não informada';
+  }
+}
+
 export default function DashboardPage() {
   const totalRevenue = events.reduce((sum, e) => sum + e.price * e.tickets_sold, 0);
   const totalTickets = events.reduce((sum, e) => sum + e.tickets_sold, 0);
@@ -109,7 +126,10 @@ export default function DashboardPage() {
                     className="w-12 h-12 rounded-lg object-cover shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm line-clamp-1">{event.title}</p>
+                    <p className="font-medium text-sm overflow-hidden whitespace-nowrap" style={{ textOverflow: 'ellipsis', maxWidth: '100%' }}>{event.title}</p>
+                    <div className="text-xs font-semibold text-red-500 mt-1 flex items-center gap-1">
+                      📅 {formatEventDate(event.date)}
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="secondary" className="rounded-full text-xs">
                         {event.category}

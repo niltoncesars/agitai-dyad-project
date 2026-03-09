@@ -23,6 +23,23 @@ import L from "leaflet";
 
 const SETTINGS_KEY = "agitai_notification_settings";
 
+// Função para formatar a data no formato desejado
+function formatEventDate(dateString: string): string {
+  try {
+    const date = new Date(dateString);
+    const days = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    
+    const dayName = days[date.getDay()];
+    const dayNum = date.getDate();
+    const monthName = months[date.getMonth()];
+    
+    return `${dayName}, ${dayNum} de ${monthName}`;
+  } catch (error) {
+    return 'Data não informada';
+  }
+}
+
 interface FavoriteLocation {
   id: string;
   name: string;
@@ -534,16 +551,19 @@ export default function MapPage() {
                     >
                       <div className="flex gap-3">
                         <div className="relative">
-                          <img src={event.image} alt={event.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                          <img src={event.image} alt={event.title} className="rounded-lg object-cover flex-shrink-0" style={{ width: '60px', height: '60px' }} />
                           {isInRange && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-white rounded-full" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <h4 className={`font-medium text-sm truncate ${isInRange ? "text-blue-900" : ""}`}>{event.title}</h4>
-                            <div className="flex gap-1">
+                            <h4 className={`font-medium text-sm overflow-hidden whitespace-nowrap flex-1 min-w-0 ${isInRange ? "text-blue-900" : ""}`} style={{ textOverflow: 'ellipsis' }}>{event.title}</h4>
+                            <div className="flex gap-1 flex-shrink-0">
                               <CheckInButton eventId={event.id} eventTitle={event.title} />
                               <FavoriteButton eventId={event.id} size="sm" className="h-6 w-6 bg-transparent shadow-none p-0" />
                             </div>
+                          </div>
+                          <div className="text-[10px] font-semibold text-red-500 mt-1 flex items-center gap-1">
+                            📅 {formatEventDate(event.date)}
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="secondary" className={`rounded-full text-[10px] px-1.5 h-4 ${isInRange ? "bg-blue-200 text-blue-800" : ""}`}>
