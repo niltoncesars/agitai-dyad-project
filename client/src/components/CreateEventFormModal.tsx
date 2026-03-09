@@ -594,7 +594,7 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
             </button>
           </div>
           
-          <div className="mt-6 pt-6 border-t border-indigo-100">
+          <div className="mt-4 pt-4 border-t border-indigo-100">
             <button 
               onClick={onClose}
               className="w-full bg-red-50 border border-red-200 text-red-600 font-bold py-3.5 rounded-[12px] hover:bg-red-100 transition-all flex items-center justify-center gap-2"
