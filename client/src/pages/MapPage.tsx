@@ -314,7 +314,7 @@ export default function MapPage() {
       updateRadiusOnMap(map);
       addMarkersToMap(map, filteredEvents);
     }
-  }, [selectedCity, selectedCategory, searchQuery, settings, showRadius]);
+  }, [selectedCity, selectedSubcategories, searchQuery, settings, showRadius]);
 
   const handleZoomIn = () => mapRef.current?.setZoom(mapRef.current.getZoom() + 1);
   const handleZoomOut = () => mapRef.current?.setZoom(mapRef.current.getZoom() - 1);
