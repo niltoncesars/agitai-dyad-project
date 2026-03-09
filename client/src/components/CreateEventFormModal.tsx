@@ -579,22 +579,24 @@ const CreateEventFormModal: React.FC<CreateEventFormModalProps> = ({ isOpen, onC
 
         {/* Footer */}
         <div className="p-6 sticky bottom-0 bg-[#f4f2ff] z-10 rounded-b-[24px] border-t border-indigo-100">
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-[10px]">
             <button 
               onClick={() => onSubmit({ ...formData, coverImage, bannerImage, selectedTickets, lotes, isDraft: true })}
-              className="flex-1 bg-white border-2 border-indigo-100 text-[#5b2ef7] font-bold py-3.5 rounded-[12px] hover:border-indigo-300 hover:bg-indigo-50 transition-all"
+              className="w-full bg-white border-2 border-indigo-100 text-[#5b2ef7] font-bold py-3.5 rounded-[12px] hover:border-indigo-300 hover:bg-indigo-50 transition-all"
             >
               Salvar Rascunho
             </button>
             <button 
               onClick={handleFormSubmit}
-              className="flex-1 bg-[#5b2ef7] text-white font-bold py-3.5 rounded-[12px] hover:bg-indigo-700 transition-all shadow-[0_4px_20px_rgba(91,46,247,0.25)]"
+              className="w-full bg-[#5b2ef7] text-white font-bold py-3.5 rounded-[12px] hover:bg-indigo-700 transition-all shadow-[0_4px_20px_rgba(91,46,247,0.25)]"
             >
               {editingEvent ? "Atualizar Evento" : "Publicar Evento"}
             </button>
           </div>
           
-          <div className="mt-4 pt-4 border-t border-indigo-100">
+          <div className="my-[2px] h-[1.5px] bg-indigo-100 mt-[25px]"></div>
+          
+          <div className="mt-[2px]">
             <button 
               onClick={onClose}
               className="w-full bg-red-50 border border-red-200 text-red-600 font-bold py-3.5 rounded-[12px] hover:bg-red-100 transition-all flex items-center justify-center gap-2"
