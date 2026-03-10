@@ -801,7 +801,7 @@ export default function MapPage() {
                     }}
                   >
                     <MapIcon className="w-4 h-4" />
-                    Como chegar (Rota)
+                    Explorar no mapa
                   </Button>
                   <div className="relative rounded-xl overflow-hidden h-40 border border-border bg-slate-100">
                     <MiniMap 
