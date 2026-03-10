@@ -792,20 +792,31 @@ export default function MapPage() {
                     className="w-full h-10 rounded-lg border-slate-300 text-slate-700 font-medium flex items-center justify-center gap-2 hover:bg-slate-50 mb-3"
                     onClick={() => {
                       // Se houver uma referência ao mapa ou função de zoom, poderia ser usada aqui
-                      toast.info("Explorando localização no mapa...");
+                      toast.info(`Explorando ${selectedEvent.address} no mapa...`);
                     }}
                   >
                     <MapIcon className="w-4 h-4" />
                     Explorar no mapa
                   </Button>
-                  <div className="relative rounded-xl overflow-hidden h-32 border border-border">
+                  <div className="relative rounded-xl overflow-hidden h-40 border border-border bg-slate-100 flex items-center justify-center">
                     <img 
-                      src={`https://api.mapbox.com/styles/v1/mapbox/light-v10/static/pin-s+ff0000(${selectedEvent.longitude},${selectedEvent.latitude})/${selectedEvent.longitude},${selectedEvent.latitude},15,0/1000x300?access_token=pk.eyJ1IjoibWFudXMtYWkiLCJhIjoiY203cmF6YndpMDNrejJscTJpZzR6NHJ3dyJ9`} 
-                      alt="Mapa de localização" 
+                      src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-l+ff0000(${selectedEvent.longitude},${selectedEvent.latitude})/${selectedEvent.longitude},${selectedEvent.latitude},15,0/1000x400?access_token=pk.eyJ1IjoibWFudXMtYWkiLCJhIjoiY203cmF6YndpMDNrejJscTJpZzR6NHJ3dyJ9`} 
+                      alt={`Mapa de ${selectedEvent.address}`} 
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        // Fallback caso a API key de teste falhe ou não tenha internet
-                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1000&h=300";
+                        // Fallback visual mais informativo caso a API de mapa falhe
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `
+                            <div class="flex flex-col items-center justify-center p-4 text-center">
+                              <div class="w-8 h-8 text-blue-600 mb-2">📍</div>
+                              <p class="text-xs font-medium text-slate-600">${selectedEvent.address}</p>
+                              <p class="text-[10px] text-slate-400 mt-1">Mapa indisponível no momento</p>
+                            </div>
+                          `;
+                        }
                       }}
                     />
                     <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
