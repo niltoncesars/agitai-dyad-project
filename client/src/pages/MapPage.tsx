@@ -791,12 +791,16 @@ export default function MapPage() {
                     variant="outline" 
                     className="w-full h-10 rounded-lg border-slate-300 text-slate-700 font-medium flex items-center justify-center gap-2 hover:bg-slate-50 mb-3"
                     onClick={() => {
-                      // Se houver uma referência ao mapa ou função de zoom, poderia ser usada aqui
-                      toast.info(`Explorando ${selectedEvent.address} no mapa...`);
+                      const destination = `${selectedEvent.latitude},${selectedEvent.longitude}`;
+                      const origin = userLocation ? `${userLocation.latitude},${userLocation.longitude}` : "";
+                      const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}${origin ? `&origin=${origin}` : ""}&travelmode=driving`;
+                      
+                      toast.info(`Abrindo rota para ${selectedEvent.title}...`);
+                      window.open(url, "_blank");
                     }}
                   >
                     <MapIcon className="w-4 h-4" />
-                    Explorar no mapa
+                    Como chegar (Rota)
                   </Button>
                   <div className="relative rounded-xl overflow-hidden h-40 border border-border bg-slate-100 flex items-center justify-center">
                     <img 
