@@ -296,6 +296,7 @@ export default function EventsPage() {
                   <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">Cidade</th>
                   <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">Data</th>
                   <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Ingressos</th>
+                  <th className="text-left p-4 text-sm font-medium text-muted-foreground hidden lg:table-cell">Engajamento</th>
                   <th className="text-left p-4 text-sm font-medium text-muted-foreground">Preço</th>
                   <th className="text-left p-4 text-sm font-medium text-muted-foreground">Status</th>
                   <th className="text-right p-4 text-sm font-medium text-muted-foreground">
@@ -372,6 +373,22 @@ export default function EventsPage() {
                             className="bg-blue-600 h-1.5 rounded-full"
                             style={{ width: `${(event.tickets_sold / event.tickets_total) * 100}%` }}
                           />
+                        </div>
+                      </td>
+                      <td className="p-4 hidden lg:table-cell">
+                        <div className="flex flex-col gap-1 text-xs">
+                          <div className="flex items-center gap-1.5 text-pink-600 font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.51 4.05 3 5.5l7 7Z"/>
+                            </svg>
+                            <span>{Math.floor(event.tickets_sold * 0.15).toLocaleString("pt-BR")} favoritos</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-indigo-600 font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 640 640" fill="currentColor">
+                              <path d="M192 64C156.7 64 128 92.7 128 128L128 544C128 555.5 134.2 566.2 144.2 571.8C154.2 577.4 166.5 577.3 176.4 571.4L320 485.3L463.5 571.4C473.4 577.3 485.7 577.5 495.7 571.8C505.7 566.1 512 555.5 512 544L512 128C512 92.7 483.3 64 448 64L192 64z"/>
+                            </svg>
+                            <span>{Math.floor(event.tickets_sold * 0.4).toLocaleString("pt-BR")} confirmados</span>
+                          </div>
                         </div>
                       </td>
                       <td className="p-4">
