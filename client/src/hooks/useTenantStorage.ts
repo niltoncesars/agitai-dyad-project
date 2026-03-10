@@ -9,6 +9,8 @@ export interface TenantData {
   website: string;
   status: "active" | "inactive";
   plan: "Enterprise" | "Professional" | "Starter";
+  personType?: "individual" | "legal"; // individual (CPF), legal (CNPJ)
+  documentNumber?: string;
   logo?: string; // Base64 encoded image
   updatedAt?: string; // ISO timestamp
 }

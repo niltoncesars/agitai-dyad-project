@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { events, formatCurrency } from "@/lib/mock-data";
 import DashboardLayout from "@/components/DashboardLayout";
-import { RatingSystem } from "@/components/RatingSystem";
 import { toast } from "sonner";
-import { useTenantStorage } from "@/hooks/useTenantStorage";
+import { useTenantStorage, TenantData } from "@/hooks/useTenantStorage";
+import { EditTenantDialog } from "@/components/EditTenantDialog";
 
 const tenants = [
   {
@@ -92,80 +92,63 @@ const tenants = [
 export default function TenantsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedTenantForEdit, setSelectedTenantForEdit] = useState<any>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   
   // Usar hook de persistência de dados
-  const { tenantData, isLoaded, updateTenantLogo, getTenantLogo } = useTenantStorage();
+  const { tenantData, isLoaded, updateTenant, updateTenantLogo, getTenantLogo } = useTenantStorage();
   
-  // Inicializar dados de tenants no storage se não existirem
-  useEffect(() => {
-    if (isLoaded) {
-      tenants.forEach((tenant) => {
-        // Se o tenant não existe no storage, adicionar com dados iniciais
-        if (!tenantData[tenant.id]) {
-          // Os dados iniciais serão salvos automaticamente pelo hook
-        }
-      });
-    }
-  }, [isLoaded, tenantData]);
+  const handleEditClick = (tenant: any) => {
+    setSelectedTenantForEdit(tenant);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveTenant = (id: string, updates: Partial<TenantData>) => {
+    updateTenant(id, updates);
+    toast.success("Tenant atualizado com sucesso!", {
+      style: {
+        background: "#10b981",
+        color: "#ffffff",
+        border: "none",
+      },
+    });
+  };
 
   const handleLogoUpload = (tenantId: string, file: File | null) => {
-    // Validar se arquivo foi selecionado
     if (!file) {
-      toast.error("Nenhum arquivo foi selecionado. Por favor, escolha uma imagem.", {
-        style: {
-          background: "#ef4444",
-          color: "#ffffff",
-          border: "none",
-        },
-      });
+      toast.error("Nenhum arquivo foi selecionado.");
       return;
     }
 
-    // Validar tipo de arquivo
     const allowedTypes = ["image/png", "image/jpeg", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
-      toast.error("Tipo de arquivo inválido. Apenas PNG, JPG e GIF são permitidos.", {
-        style: {
-          background: "#ef4444",
-          color: "#ffffff",
-          border: "none",
-        },
-      });
+      toast.error("Tipo de arquivo inválido. Apenas PNG, JPG e GIF são permitidos.");
       return;
     }
 
-    // Validar tamanho do arquivo (2MB = 2097152 bytes)
     const maxSize = 2 * 1024 * 1024; // 2MB
     if (file.size > maxSize) {
-      toast.error(`Arquivo muito grande. O tamanho máximo é 2MB. Seu arquivo tem ${(file.size / 1024 / 1024).toFixed(2)}MB.`, {
-        style: {
-          background: "#ef4444",
-          color: "#ffffff",
-          border: "none",
-        },
-      });
+      toast.error("Arquivo muito grande. O tamanho máximo é 2MB.");
       return;
     }
 
-    // Se passou em todas as validações, fazer upload
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
-      // Salvar logo no storage persistente
       updateTenantLogo(tenantId, base64);
-      toast.success("Logo do Tenant atualizada com sucesso!", {
-        style: {
-          background: "#10b981",
-          color: "#ffffff",
-          border: "none",
-        },
-      });
+      toast.success("Logo atualizada com sucesso!");
     };
     reader.readAsDataURL(file);
   };
 
-  const filteredTenants = tenants.filter((tenant) => {
+  // Combinar dados iniciais com dados do storage
+  const allTenants = tenants.map(tenant => {
+    const storedData = tenantData[tenant.id];
+    return storedData ? { ...tenant, ...storedData } : tenant;
+  });
+
+  const filteredTenants = allTenants.filter((tenant) => {
     if (selectedStatus !== "all" && tenant.status !== selectedStatus) return false;
     if (
       searchQuery &&
@@ -188,7 +171,6 @@ export default function TenantsPage() {
   return (
     <DashboardLayout>
       <div className="p-4 lg:p-6 space-y-6 max-w-[1600px] mx-auto">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
@@ -206,7 +188,6 @@ export default function TenantsPage() {
           </Button>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-card rounded-xl border border-border p-4">
             <p className="text-sm text-muted-foreground">Total de Tenants</p>
@@ -215,24 +196,23 @@ export default function TenantsPage() {
           <div className="bg-card rounded-xl border border-border p-4">
             <p className="text-sm text-muted-foreground">Ativos</p>
             <p className="text-2xl font-bold mt-1 text-green-600">
-              {tenants.filter((t) => t.status === "active").length}
+              {allTenants.filter((t) => t.status === "active").length}
             </p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
             <p className="text-sm text-muted-foreground">Enterprise</p>
             <p className="text-2xl font-bold mt-1 text-purple-600">
-              {tenants.filter((t) => t.plan === "Enterprise").length}
+              {allTenants.filter((t) => t.plan === "Enterprise").length}
             </p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
             <p className="text-sm text-muted-foreground">Receita Total</p>
             <p className="text-2xl font-bold mt-1 text-blue-600">
-              {formatCurrency(tenants.reduce((sum, t) => sum + t.totalRevenue, 0))}
+              {formatCurrency(allTenants.reduce((sum, t) => sum + t.totalRevenue, 0))}
             </p>
           </div>
         </div>
 
-        {/* Filters */}
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
@@ -274,7 +254,6 @@ export default function TenantsPage() {
           </div>
         </div>
 
-        {/* Tenants Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredTenants.length === 0 ? (
             <div className="col-span-full p-8 text-center text-muted-foreground bg-card rounded-xl border border-border">
@@ -286,10 +265,8 @@ export default function TenantsPage() {
                 key={tenant.id}
                 className="bg-card rounded-xl border border-border p-6 hover:shadow-md transition-shadow"
               >
-                {/* Header with Logo and Edit Button */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-start gap-3 flex-1">
-                    {/* Logo Container with Edit Button */}
                     <div className="relative">
                       <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 border border-border overflow-hidden">
                         {getTenantLogo(tenant.id) ? (
@@ -302,7 +279,6 @@ export default function TenantsPage() {
                           <Building2 className="w-8 h-8 text-gray-400" />
                         )}
                       </div>
-                      {/* Edit Button (Pencil) */}
                       <button
                         onClick={() => fileInputRefs.current[tenant.id]?.click()}
                         className="absolute -top-1 -right-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-1.5 shadow-md transition-colors"
@@ -310,7 +286,6 @@ export default function TenantsPage() {
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      {/* Hidden File Input */}
                       <input
                         ref={(ref) => {
                           if (ref) fileInputRefs.current[tenant.id] = ref;
@@ -325,7 +300,6 @@ export default function TenantsPage() {
                       />
                     </div>
 
-                    {/* Name and Plan */}
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-base text-foreground">{tenant.name}</h3>
                       <Badge className={`text-xs px-2 py-0.5 rounded-full border font-medium mt-1 w-fit ${getPlanColor(tenant.plan)}`}>
@@ -334,7 +308,6 @@ export default function TenantsPage() {
                     </div>
                   </div>
 
-                  {/* Status Indicator */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <div
                       className={`w-2 h-2 rounded-full ${tenant.status === "active" ? "bg-green-500" : "bg-gray-400"}`}
@@ -345,7 +318,6 @@ export default function TenantsPage() {
                   </div>
                 </div>
 
-                {/* Contact Information */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="w-4 h-4 shrink-0" />
@@ -365,7 +337,6 @@ export default function TenantsPage() {
                   </div>
                 </div>
 
-                {/* Stats and Rating */}
                 <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-border">
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-semibold">Eventos</p>
@@ -377,26 +348,17 @@ export default function TenantsPage() {
                   </div>
                 </div>
 
-                {/* Rating */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-yellow-400 text-lg">★</span>
-                    <span className="font-semibold text-sm">4.5</span>
-                    <span className="text-xs text-muted-foreground">(2 avaliações)</span>
-                  </div>
-                  <Button variant="ghost" size="sm" className="text-xs font-semibold gap-1">
-                    Avaliar
-                    <span className="text-muted-foreground">2</span>
-                  </Button>
-                </div>
-
-                {/* Action Buttons */}
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1 gap-1 rounded-lg">
                     <Eye className="w-3.5 h-3.5" />
                     Ver
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1 gap-1 rounded-lg">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 gap-1 rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
+                    onClick={() => handleEditClick(tenant)}
+                  >
                     <Edit className="w-3.5 h-3.5" />
                     Editar
                   </Button>
@@ -412,6 +374,13 @@ export default function TenantsPage() {
             ))
           )}
         </div>
+
+        <EditTenantDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          tenant={selectedTenantForEdit}
+          onSave={handleSaveTenant}
+        />
       </div>
     </DashboardLayout>
   );
