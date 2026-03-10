@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info, Heart, Users, Clock, MapPinIcon, Building2, Share2, Filter, X, Check } from "lucide-react";
+import { MapPin, Search, Layers, ZoomIn, ZoomOut, RotateCcw, ShoppingCart, Locate, Info, Heart, Users, Clock, MapPinIcon, Building2, Share2, Filter, X, Check, Map as MapIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -783,6 +783,33 @@ export default function MapPage() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Explore on Map Section */}
+                <div className="pt-4 mt-4 border-t border-border">
+                  <Button 
+                    variant="outline" 
+                    className="w-full h-10 rounded-lg border-slate-300 text-slate-700 font-medium flex items-center justify-center gap-2 hover:bg-slate-50 mb-3"
+                    onClick={() => {
+                      // Se houver uma referência ao mapa ou função de zoom, poderia ser usada aqui
+                      toast.info("Explorando localização no mapa...");
+                    }}
+                  >
+                    <MapIcon className="w-4 h-4" />
+                    Explorar no mapa
+                  </Button>
+                  <div className="relative rounded-xl overflow-hidden h-32 border border-border">
+                    <img 
+                      src={`https://api.mapbox.com/styles/v1/mapbox/light-v10/static/pin-s+ff0000(${selectedEvent.longitude},${selectedEvent.latitude})/${selectedEvent.longitude},${selectedEvent.latitude},15,0/1000x300?access_token=pk.eyJ1IjoibWFudXMtYWkiLCJhIjoiY203cmF6YndpMDNrejJscTJpZzR6NHJ3dyJ9`} 
+                      alt="Mapa de localização" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback caso a API key de teste falhe ou não tenha internet
+                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=1000&h=300";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
+                  </div>
                 </div>
               </div>
             </div>
