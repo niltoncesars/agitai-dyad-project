@@ -111,11 +111,24 @@ export default function MapPage() {
             });
           },
           (error) => {
-            console.log("Geolocalização não permitida ou indisponível");
-            // Fallback para uma localização padrão para demonstração se necessário
-            // Ou apenas manter null
+            console.log("Geolocalização não permitida ou indisponível, usando fallback para Fortaleza");
+            // Fallback para Fortaleza como localização padrão
+            const fortaleza = cities.find(c => c.name === "Fortaleza") || cities[8];
+            setUserLocation({
+              latitude: fortaleza.latitude,
+              longitude: fortaleza.longitude,
+              cityName: fortaleza.name
+            });
           }
         );
+      } else {
+        // Se geolocalização não é suportada, usar Fortaleza como padrão
+        const fortaleza = cities.find(c => c.name === "Fortaleza") || cities[8];
+        setUserLocation({
+          latitude: fortaleza.latitude,
+          longitude: fortaleza.longitude,
+          cityName: fortaleza.name
+        });
       }
     };
 
@@ -172,8 +185,14 @@ export default function MapPage() {
   const filteredEvents = allEvents.filter((event) => {
     if (selectedCity !== "all" && selectedCity !== "current" && event.city_id !== selectedCity) return false;
     if (selectedCity === "current" && userLocation) {
-      const distance = calculateDistance(userLocation.latitude, userLocation.longitude, event.latitude, event.longitude);
-      if (distance > 50) return false;
+      // Priorizar match por nome da cidade para garantir que eventos da mesma cidade apareçam
+      const isSameCity = event.city_name.toLowerCase().includes(userLocation.cityName.toLowerCase()) || 
+                        userLocation.cityName.toLowerCase().includes(event.city_name.toLowerCase());
+      
+      if (!isSameCity) {
+        const distance = calculateDistance(userLocation.latitude, userLocation.longitude, event.latitude, event.longitude);
+        if (distance > 50) return false;
+      }
     }
     if (selectedSubcategories.length > 0) {
       // Verifica se alguma das categorias do evento está entre as selecionadas
