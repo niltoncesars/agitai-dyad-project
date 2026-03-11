@@ -12,6 +12,13 @@ export interface TenantData {
   personType?: "individual" | "legal"; // individual (CPF), legal (CNPJ)
   documentNumber?: string;
   logo?: string; // Base64 encoded image
+  address?: {
+    street: string;
+    number: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+  };
   updatedAt?: string; // ISO timestamp
 }
 

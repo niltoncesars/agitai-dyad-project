@@ -182,7 +182,7 @@ export default function TenantsPage() {
               {filteredTenants.length} organizador{filteredTenants.length !== 1 ? "es" : ""} cadastrado{filteredTenants.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button className="gap-2 self-start sm:self-auto">
+          <Button className="gap-2 self-start sm:self-auto" onClick={() => console.log("Novo Tenant clicado")}>
             <Plus className="w-4 h-4" />
             Novo Tenant
           </Button>
@@ -296,92 +296,82 @@ export default function TenantsPage() {
                           const file = e.target.files?.[0] || null;
                           handleLogoUpload(tenant.id, file);
                         }}
-                        className="hidden"
+                        style={{ display: "none" }}
                       />
                     </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-base text-foreground">{tenant.name}</h3>
-                      <Badge className={`text-xs px-2 py-0.5 rounded-full border font-medium mt-1 w-fit ${getPlanColor(tenant.plan)}`}>
-                        {tenant.plan}
-                      </Badge>
+                    <div>
+                      <h3 className="font-bold text-lg flex items-center gap-2">
+                        {tenant.name}
+                        <Badge
+                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${getPlanColor(tenant.plan)}`}
+                        >
+                          {tenant.plan}
+                        </Badge>
+                      </h3>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                        <Mail className="w-3 h-3" /> {tenant.email}
+                      </p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                        <Phone className="w-3 h-3" /> {tenant.phone}
+                      </p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3" /> {tenant.city}
+                      </p>
+                      {tenant.website && (
+                        <a
+                          href={tenant.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                        >
+                          <Globe className="w-3 h-3" /> {tenant.website}
+                        </a>
+                      )}
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <div
-                      className={`w-2 h-2 rounded-full ${tenant.status === "active" ? "bg-green-500" : "bg-gray-400"}`}
-                    />
-                    <span className="text-xs text-muted-foreground capitalize">
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge
+                      variant={tenant.status === "active" ? "default" : "secondary"}
+                      className="text-xs font-medium px-2 py-0.5 rounded-full"
+                    >
                       {tenant.status === "active" ? "Ativo" : "Inativo"}
-                    </span>
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 text-xs"
+                      onClick={() => handleEditClick(tenant)}
+                    >
+                      <Edit className="w-3 h-3" /> Editar
+                    </Button>
                   </div>
                 </div>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{tenant.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="w-4 h-4 shrink-0" />
-                    <span>{tenant.phone}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="w-4 h-4 shrink-0" />
-                    <span>{tenant.city}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Globe className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{tenant.website}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-border">
+                <div className="grid grid-cols-2 text-sm text-muted-foreground mt-4 pt-4 border-t border-border">
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase font-semibold">Eventos</p>
-                    <p className="text-2xl font-bold mt-1">{tenant.eventsCount}</p>
+                    <p>Eventos:</p>
+                    <p className="font-semibold text-foreground">{tenant.eventsCount}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase font-semibold">Receita</p>
-                    <p className="text-sm font-bold text-blue-600 mt-1">{formatCurrency(tenant.totalRevenue)}</p>
+                  <div className="text-right">
+                    <p>Receita:</p>
+                    <p className="font-semibold text-foreground">
+                      {formatCurrency(tenant.totalRevenue)}
+                    </p>
                   </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1 gap-1 rounded-lg">
-                    <Eye className="w-3.5 h-3.5" />
-                    Ver
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1 gap-1 rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
-                    onClick={() => handleEditClick(tenant)}
-                  >
-                    <Edit className="w-3.5 h-3.5" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
                 </div>
               </div>
             ))
           )}
         </div>
+      </div>
 
+      {selectedTenantForEdit && (
         <EditTenantDialog
           isOpen={isEditDialogOpen}
           onClose={() => setIsEditDialogOpen(false)}
           tenant={selectedTenantForEdit}
           onSave={handleSaveTenant}
         />
-      </div>
+      )}
     </DashboardLayout>
   );
 }
