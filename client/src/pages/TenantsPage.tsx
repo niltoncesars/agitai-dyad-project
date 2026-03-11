@@ -330,12 +330,30 @@ export default function TenantsPage() {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <Badge
-                      variant={tenant.status === "active" ? "default" : "secondary"}
-                      className="text-xs font-medium px-2 py-0.5 rounded-full"
+                    <div
+                      className="flex items-center gap-1.5 ml-auto"
+                      style={{
+                        fontSize: '12.5px',
+                        fontWeight: '600',
+                        fontFamily: '"DM Sans", sans-serif',
+                        flexShrink: 0,
+                      }}
                     >
-                      {tenant.status === "active" ? "Ativo" : "Inativo"}
-                    </Badge>
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{
+                          backgroundColor: tenant.status === "active" ? '#16a34a' : '#94a3b8',
+                          boxShadow: tenant.status === "active" ? '0 0 0 2px #dcfce7' : '0 0 0 2px #f1f5f9',
+                        }}
+                      ></span>
+                      <span
+                        style={{
+                          color: tenant.status === "active" ? '#16a34a' : '#94a3b8',
+                        }}
+                      >
+                        {tenant.status === "active" ? "Ativo" : "Inativo"}
+                      </span>
+                    </div>
                     {/* <Button
                       variant="outline"
                       size="sm"
