@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Building2, Search, Plus, Eye, Edit, Trash2, Globe, Mail, Phone, MapPin, Pencil } from "lucide-react";
+import { Building2, Search, Plus, Eye, Edit, Trash2, Globe, Mail, Phone, MapPin, Pencil, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -336,26 +336,95 @@ export default function TenantsPage() {
                     >
                       {tenant.status === "active" ? "Ativo" : "Inativo"}
                     </Badge>
-                    <Button
+                    {/* <Button
                       variant="outline"
                       size="sm"
                       className="gap-1 text-xs"
                       onClick={() => handleEditClick(tenant)}
                     >
                       <Edit className="w-3 h-3" /> Editar
-                    </Button>
+                    </Button> */}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 text-sm text-muted-foreground mt-4 pt-4 border-t border-border">
-                  <div>
-                    <p>Eventos:</p>
-                    <p className="font-semibold text-foreground">{tenant.eventsCount}</p>
+
+                {/* Nova seção inferior do card */}
+                <div className="mt-4 pt-4" style={{ borderTop: '1px solid #e2e6f3' }}>
+                  {/* Linha de Avaliação */}
+                  <div className="flex items-center justify-start gap-1.5 mb-4" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                    <Star className="w-[15px] h-[15px]" style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+                    <span className="font-bold text-sm" style={{ color: '#1a1f35' }}>4.5</span>
+                    <span className="text-[13px] font-normal" style={{ color: '#7b82a0' }}>(2 avaliações)</span>
                   </div>
-                  <div className="text-right">
-                    <p>Receita:</p>
-                    <p className="font-semibold text-foreground">
-                      {formatCurrency(tenant.totalRevenue)}
-                    </p>
+
+                  {/* Linha de Ações */}
+                  <div className="flex items-center gap-2 w-full" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                    <Button
+                      variant="outline"
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-[10px] h-[38px]"
+                      style={{
+                        padding: '9px 12px',
+                        border: '1.5px solid #dde2ef',
+                        background: '#f4f6fb',
+                        color: '#4a5270',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#e8ecf8';
+                        e.currentTarget.style.borderColor = '#c5cde8';
+                        e.currentTarget.style.color = '#4f6ef7';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#f4f6fb';
+                        e.currentTarget.style.borderColor = '#dde2ef';
+                        e.currentTarget.style.color = '#4a5270';
+                      }}
+                    >
+                      <Eye className="w-[14px] h-[14px]" /> Ver
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-[10px] h-[38px]"
+                      style={{
+                        padding: '9px 12px',
+                        border: '1.5px solid #dde2ef',
+                        background: '#f4f6fb',
+                        color: '#4a5270',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                      }}
+                      onClick={() => handleEditClick(tenant)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#e8ecf8';
+                        e.currentTarget.style.borderColor = '#c5cde8';
+                        e.currentTarget.style.color = '#4f6ef7';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#f4f6fb';
+                        e.currentTarget.style.borderColor = '#dde2ef';
+                        e.currentTarget.style.color = '#4a5270';
+                      }}
+                    >
+                      <Edit className="w-[14px] h-[14px]" /> Editar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="rounded-[10px] w-[38px] h-[38px] flex items-center justify-center"
+                      style={{
+                        border: '1.5px solid #dde2ef',
+                        background: '#f4f6fb',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#fee2e2';
+                        e.currentTarget.style.borderColor = '#fca5a5';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#f4f6fb';
+                        e.currentTarget.style.borderColor = '#dde2ef';
+                      }}
+                    >
+                      <Trash2 className="w-[14px] h-[14px]" style={{ color: '#ef4444' }} />
+                    </Button>
                   </div>
                 </div>
               </div>
