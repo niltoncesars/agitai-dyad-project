@@ -1,12 +1,8 @@
-import { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState, useRef } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { UploadCloud, X, Building2, Check } from "lucide-react";
-import { toast } from "sonner";
 import { TenantData } from "@/hooks/useTenantStorage";
+import "@/styles/custom-modal.css";
 
 interface CreateTenantDialogProps {
   isOpen: boolean;
@@ -14,48 +10,27 @@ interface CreateTenantDialogProps {
   onSave: (newTenant: TenantData) => void;
 }
 
-const initialFormData: TenantData = {
-  id: "", // Será gerado na criação
-  name: "",
-  email: "",
-  phone: "",
-  city: "",
-  website: "",
-  status: "active",
-  plan: "Enterprise", // Default plan
-  eventsCount: 0,
-  totalRevenue: 0,
-  joinedAt: new Date().toISOString().split("T")[0],
-  logo: null,
-  document: "",
-  personType: "PF", // Default to PF as per prompt
-  street: "",
-  number: "",
-  neighborhood: "",
-  state: "SP", // Default to SP as per prompt
-};
-
 export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDialogProps) {
-  const [formData, setFormData] = useState<TenantData>(initialFormData);
+  const [formData, setFormData] = useState<Partial<TenantData>>({
+    status: "active",
+    personType: "PJ",
+    plan: "Enterprise",
+    state: "SP"
+  });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [isAddressLocked, setIsAddressLocked] = useState(true);
+  const [isAddressLocked, setIsAddressLocked] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setFormData(initialFormData);
-      setLogoPreview(null);
-      setIsAddressLocked(true);
-    }
-  }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSwitchChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, status: checked ? "active" : "inactive" }));
+  const handleSwitchChange = () => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      status: prev.status === "active" ? "inactive" : "active" 
+    }));
   };
 
   const handlePersonTypeChange = (type: "PJ" | "PF") => {
@@ -74,24 +49,84 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
     }
   };
 
-  const handleRemoveLogo = () => {
-    setLogoPreview(null);
-    setFormData((prev) => ({ ...prev, logo: null }));
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+  const handleToggleAddressLock = () => {
+    const newLockedState = !isAddressLocked;
+    setIsAddressLocked(newLockedState);
+    
+    if (newLockedState) {
+      // Se marcou o checkbox, preenche com o endereço do usuário (mockado conforme solicitado)
+      setFormData(prev => ({
+        ...prev,
+        street: "Avenida Paulista",
+        number: "1578",
+        neighborhood: "Bela Vista",
+        city: "São Paulo",
+        state: "SP"
+      }));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('drag-over');
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+        setFormData((prev) => ({ ...prev, logo: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleSubmit = () => {
-    const newTenantId = `tenant-${Date.now()}`;
-    onSave({ ...formData, id: newTenantId });
+    const newTenant: TenantData = {
+      id: `tenant-${Date.now()}`,
+      name: formData.name || "",
+      email: formData.email || "",
+      phone: formData.phone || "",
+      city: formData.city || "",
+      website: formData.website || "",
+      status: formData.status as "active" | "inactive",
+      plan: formData.plan || "Enterprise",
+      eventsCount: 0,
+      totalRevenue: 0,
+      joinedAt: new Date().toISOString().split('T')[0],
+      logo: formData.logo || null,
+      street: formData.street,
+      number: formData.number,
+      neighborhood: formData.neighborhood,
+      state: formData.state,
+      personType: formData.personType as "PJ" | "PF",
+      document: formData.document
+    };
+    onSave(newTenant);
     onClose();
+    // Reset form
+    setFormData({
+      status: "active",
+      personType: "PJ",
+      plan: "Enterprise",
+      state: "SP"
+    });
+    setLogoPreview(null);
+    setIsAddressLocked(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="modal" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-        <DialogHeader className="modal-header">
+      <DialogContent className="modal-container" style={{ padding: 0, border: 'none', maxWidth: '520px' }} showCloseButton={false}>
+        <div className="modal-header">
           <div>
             <p className="subtitle">Configurações</p>
             <h2>Criar Novo Organizador</h2>
@@ -102,11 +137,12 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
-        </DialogHeader>
+        </div>
+
         <div className="modal-body">
-          {/* 1. Bloco: Imagem do Tenant */}
+          {/* Imagem do Tenant */}
           <div>
-            <Label htmlFor="logo-upload" className="field-label">Imagem do Tenant <span style={{ textTransform: 'none', letterSpacing: 'normal', fontWeight: '400', fontSize: '11px' }}> — 480 × 480 px</span></Label>
+            <Label className="field-label">Imagem do Tenant <span style={{ textTransform: 'none', letterSpacing: 'normal', fontWeight: '400', fontSize: '11px' }}> — 480 × 480 px</span></Label>
             <div className="upload-row">
               <div className={`img-preview ${logoPreview ? 'has-image' : ''}`} onClick={() => fileInputRef.current?.click()}>
                 {!logoPreview ? (
@@ -125,7 +161,13 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
                   </svg>
                 </div>
               </div>
-              <div className="drop-zone" onClick={() => fileInputRef.current?.click()}>
+              <div 
+                className="drop-zone" 
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="16 16 12 12 8 16"/>
                   <line x1="12" y1="12" x2="12" y2="21"/>
@@ -134,40 +176,39 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
                 <p className="dz-main">Arraste ou clique para enviar</p>
                 <p className="dz-sub">PNG, JPG, WEBP — recomendado 480×480px</p>
                 <input
-                  id="logo-upload"
                   type="file"
                   accept="image/*"
                   ref={fileInputRef}
                   onChange={handleLogoUpload}
-                  className="hidden"
+                  style={{ display: 'none' }}
                 />
               </div>
             </div>
           </div>
 
-          {/* 2. Divisor */}
           <div className="divider"></div>
 
-          {/* 3. Bloco: Nome do Organizador */}
+          {/* Nome do Organizador */}
           <div>
             <Label htmlFor="name" className="field-label">Nome do Organizador</Label>
-            <Input
+            <input
               id="name"
-              value={formData.name}
+              type="text"
+              value={formData.name || ""}
               onChange={handleChange}
               placeholder="Razão Social ou Nome Fantasia"
               className="input-field"
             />
           </div>
 
-          {/* 4. Bloco: Email + Telefone (grid-2) */}
+          {/* Email + Telefone */}
           <div className="grid-2">
             <div>
               <Label htmlFor="email" className="field-label">Email</Label>
-              <Input
+              <input
                 id="email"
                 type="email"
-                value={formData.email}
+                value={formData.email || ""}
                 onChange={handleChange}
                 placeholder="Qual o seu e-mail?"
                 className="input-field"
@@ -175,10 +216,10 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
             </div>
             <div>
               <Label htmlFor="phone" className="field-label">Telefone</Label>
-              <Input
+              <input
                 id="phone"
                 type="tel"
-                value={formData.phone}
+                value={formData.phone || ""}
                 onChange={handleChange}
                 placeholder="(XX) 00000-0000"
                 className="input-field"
@@ -186,24 +227,27 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
             </div>
           </div>
 
-          {/* 5. Bloco: Tipo de Pessoa (seg-control) */}
+          {/* Tipo de Pessoa */}
           <div>
             <Label className="field-label">Tipo de Pessoa</Label>
             <div className="seg-control">
               <button
+                type="button"
                 className={`seg-btn ${formData.personType === "PJ" ? "active" : ""}`}
                 onClick={() => handlePersonTypeChange("PJ")}
               >
                 CNPJ
               </button>
               <button
+                type="button"
                 className={`seg-btn ${formData.personType === "PF" ? "active" : ""}`}
                 onClick={() => handlePersonTypeChange("PF")}
               >
                 CPF
               </button>
-              <Input
+              <input
                 id="document"
+                type="text"
                 value={formData.document || ""}
                 onChange={handleChange}
                 placeholder={formData.personType === "PJ" ? "00.000.000/0000-00" : "000.000.000-00"}
@@ -212,24 +256,23 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
             </div>
           </div>
 
-          {/* 6. Bloco: Plano (select) */}
+          {/* Plano */}
           <div>
             <Label htmlFor="plan" className="field-label">Plano</Label>
-            <select id="plan" value={formData.plan} onChange={handleChange}>
+            <select id="plan" value={formData.plan || "Enterprise"} onChange={handleChange} className="select-field">
               <option value="Free">Free</option>
               <option value="Pro">Pro</option>
               <option value="Enterprise">Enterprise</option>
             </select>
           </div>
 
-          {/* 7. Divisor */}
           <div className="divider"></div>
 
-          {/* 8. Bloco: Endereço Completo */}
+          {/* Endereço Completo */}
           <div>
             <div className="section-head">
               <h3>Endereço Completo</h3>
-              <label className={`checkbox-label ${isAddressLocked ? 'checked' : ''}`} onClick={() => setIsAddressLocked(!isAddressLocked)}>
+              <label className={`checkbox-label ${isAddressLocked ? 'checked' : ''}`} onClick={handleToggleAddressLock}>
                 <div className={`custom-cb ${isAddressLocked ? 'checked' : ''}`}>
                   {isAddressLocked && (
                     <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -243,8 +286,9 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
             <div className={`address-fields ${isAddressLocked ? 'locked' : ''}`}>
               <div>
                 <Label htmlFor="street" className="field-label">Logradouro</Label>
-                <Input
+                <input
                   id="street"
+                  type="text"
                   value={formData.street || ""}
                   onChange={handleChange}
                   placeholder="Rua, Avenida, Alameda..."
@@ -255,8 +299,9 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
               <div className="grid-num-bairro">
                 <div>
                   <Label htmlFor="number" className="field-label">Número</Label>
-                  <Input
+                  <input
                     id="number"
+                    type="text"
                     value={formData.number || ""}
                     onChange={handleChange}
                     placeholder="Número ou S/N"
@@ -266,8 +311,9 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
                 </div>
                 <div>
                   <Label htmlFor="neighborhood" className="field-label">Bairro</Label>
-                  <Input
+                  <input
                     id="neighborhood"
+                    type="text"
                     value={formData.neighborhood || ""}
                     onChange={handleChange}
                     placeholder="Qual o bairro?"
@@ -279,9 +325,10 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
               <div className="grid-cidade-uf">
                 <div>
                   <Label htmlFor="city" className="field-label">Cidade</Label>
-                  <Input
+                  <input
                     id="city"
-                    value={formData.city}
+                    type="text"
+                    value={formData.city || ""}
                     onChange={handleChange}
                     placeholder="Qual a cidade?"
                     className="input-field"
@@ -290,7 +337,14 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
                 </div>
                 <div>
                   <Label htmlFor="state" className="field-label">Estado</Label>
-                  <select id="state" value={formData.state || ""} onChange={handleChange} readOnly={isAddressLocked}>
+                  <select 
+                    id="state" 
+                    value={formData.state || "SP"} 
+                    onChange={handleChange} 
+                    className="select-field"
+                    disabled={isAddressLocked}
+                    style={{ paddingRight: '28px', backgroundPosition: 'right 10px center' }}
+                  >
                     <option value="">UF</option>
                     <option value="AC">AC</option>
                     <option value="AL">AL</option>
@@ -325,13 +379,12 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
             </div>
           </div>
 
-          {/* 9. Divisor */}
           <div className="divider"></div>
 
-          {/* 10. Bloco: Website */}
+          {/* Website */}
           <div>
             <Label htmlFor="website" className="field-label">Website</Label>
-            <Input
+            <input
               id="website"
               type="url"
               value={formData.website || ""}
@@ -341,29 +394,31 @@ export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDial
             />
           </div>
 
-          {/* 11. Bloco: Status do Tenant */}
+          {/* Status */}
           <div className="status-card">
             <div>
               <p className="sc-title">Status do Tenant</p>
-              <p className="sc-sub">Define se o organizador pode criar novos eventos</p>
+              <p className="sc-sub">Ative ou desative o acesso deste organizador</p>
             </div>
             <div className="toggle-wrap">
               <span className={`toggle-label ${formData.status === "inactive" ? "inactive" : ""}`}>
                 {formData.status === "active" ? "Ativo" : "Inativo"}
               </span>
-              <button
+              <button 
+                type="button"
                 className={`toggle-track ${formData.status === "inactive" ? "off" : ""}`}
-                onClick={() => handleSwitchChange(formData.status === "inactive")}
+                onClick={handleSwitchChange}
               >
-                <span className="toggle-knob"></span>
+                <div className="toggle-knob"></div>
               </button>
             </div>
           </div>
         </div>
-        <DialogFooter className="modal-footer">
+
+        <div className="modal-footer">
           <button className="btn-cancel" onClick={onClose}>Cancelar</button>
           <button className="btn-save" onClick={handleSubmit}>Criar Organizador</button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
