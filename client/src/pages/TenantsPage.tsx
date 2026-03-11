@@ -300,14 +300,14 @@ export default function TenantsPage() {
                       />
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg flex items-center gap-2">
+                      <h3 className="font-bold text-lg">
                         {tenant.name}
-                        <Badge
-                          className={`text-xs font-medium px-2 py-0.5 rounded-full ${getPlanColor(tenant.plan)}`}
-                        >
-                          {tenant.plan}
-                        </Badge>
                       </h3>
+                      <Badge
+                        className={`text-xs font-medium px-2 py-0.5 rounded-full mt-1 ${getPlanColor(tenant.plan)}`}
+                      >
+                        {tenant.plan}
+                      </Badge>
                       <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                         <Mail className="w-3 h-3" /> {tenant.email}
                       </p>
