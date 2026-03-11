@@ -8,6 +8,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { toast } from "sonner";
 import { useTenantStorage, TenantData } from "@/hooks/useTenantStorage";
 import { EditTenantDialog } from "@/components/EditTenantDialog";
+import { CreateTenantDialog } from "@/components/CreateTenantDialog";
 
 const tenants = [
   {
@@ -93,6 +94,7 @@ export default function TenantsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTenantForEdit, setSelectedTenantForEdit] = useState<any>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   
@@ -102,6 +104,21 @@ export default function TenantsPage() {
   const handleEditClick = (tenant: any) => {
     setSelectedTenantForEdit(tenant);
     setIsEditDialogOpen(true);
+  };
+
+  const handleCreateClick = () => {
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleCreateTenant = (newTenant: TenantData) => {
+    updateTenant(newTenant.id, newTenant);
+    toast.success("Tenant criado com sucesso!", {
+      style: {
+        background: "#10b981",
+        color: "#ffffff",
+        border: "none",
+      },
+    });
   };
 
   const handleSaveTenant = (id: string, updates: Partial<TenantData>) => {
@@ -182,7 +199,7 @@ export default function TenantsPage() {
               {filteredTenants.length} organizador{filteredTenants.length !== 1 ? "es" : ""} cadastrado{filteredTenants.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button className="gap-2 self-start sm:self-auto" onClick={() => console.log("Novo Tenant clicado")}>
+          <Button className="gap-2 self-start sm:self-auto" onClick={handleCreateClick}>
             <Plus className="w-4 h-4" />
             Novo Tenant
           </Button>
@@ -459,6 +476,11 @@ export default function TenantsPage() {
           onSave={handleSaveTenant}
         />
       )}
+      <CreateTenantDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        onSave={handleCreateTenant}
+      />
     </DashboardLayout>
   );
 }

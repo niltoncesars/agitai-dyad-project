@@ -8,26 +8,46 @@ import { UploadCloud, X, Building2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { TenantData } from "@/hooks/useTenantStorage";
 
-interface EditTenantDialogProps {
+interface CreateTenantDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedTenant: TenantData) => void;
-  tenant: TenantData | null;
+  onSave: (newTenant: TenantData) => void;
 }
 
-export function EditTenantDialog({ isOpen, onClose, onSave, tenant }: EditTenantDialogProps) {
-  const [formData, setFormData] = useState<TenantData>(tenant || {} as TenantData);
-  const [logoPreview, setLogoPreview] = useState<string | null>(tenant?.logo || null);
+const initialFormData: TenantData = {
+  id: "", // Será gerado na criação
+  name: "",
+  email: "",
+  phone: "",
+  city: "",
+  website: "",
+  status: "active",
+  plan: "Enterprise", // Default plan
+  eventsCount: 0,
+  totalRevenue: 0,
+  joinedAt: new Date().toISOString().split("T")[0],
+  logo: null,
+  document: "",
+  personType: "PF", // Default to PF as per prompt
+  street: "",
+  number: "",
+  neighborhood: "",
+  state: "SP", // Default to SP as per prompt
+};
+
+export function CreateTenantDialog({ isOpen, onClose, onSave }: CreateTenantDialogProps) {
+  const [formData, setFormData] = useState<TenantData>(initialFormData);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isAddressLocked, setIsAddressLocked] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (tenant) {
-      setFormData(tenant);
-      setLogoPreview(tenant.logo || null);
-      setIsAddressLocked(true); // Reset address lock on tenant change
+    if (isOpen) {
+      setFormData(initialFormData);
+      setLogoPreview(null);
+      setIsAddressLocked(true);
     }
-  }, [tenant]);
+  }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
@@ -63,7 +83,8 @@ export function EditTenantDialog({ isOpen, onClose, onSave, tenant }: EditTenant
   };
 
   const handleSubmit = () => {
-    onSave(formData);
+    const newTenantId = `tenant-${Date.now()}`;
+    onSave({ ...formData, id: newTenantId });
     onClose();
   };
 
@@ -73,7 +94,7 @@ export function EditTenantDialog({ isOpen, onClose, onSave, tenant }: EditTenant
         <DialogHeader className="modal-header">
           <div>
             <p className="subtitle">Configurações</p>
-            <h2>Editar Tenant</h2>
+            <h2>Criar Novo Organizador</h2>
           </div>
           <button className="btn-close" onClick={onClose}>
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -341,7 +362,7 @@ export function EditTenantDialog({ isOpen, onClose, onSave, tenant }: EditTenant
         </div>
         <DialogFooter className="modal-footer">
           <button className="btn-cancel" onClick={onClose}>Cancelar</button>
-          <button className="btn-save" onClick={handleSubmit}>Salvar Alterações</button>
+          <button className="btn-save" onClick={handleSubmit}>Criar Organizador</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
